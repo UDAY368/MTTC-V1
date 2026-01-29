@@ -144,20 +144,62 @@ npm run dev
 npm start
 ```
 
-### Deploy to Railway (or similar)
+### Railway Setup & New Database Migrations
 
-1. **Environment variables** (in Railway dashboard):
-   - `DATABASE_URL`: Set automatically if you add a PostgreSQL plugin; otherwise use your Postgres URL.
-   - `FRONTEND_URL`: Your frontend URL (e.g. `https://your-app.vercel.app`). For multiple origins use comma-separated: `https://app.com,http://localhost:3000`.
-   - `JWT_SECRET`: A secure random string.
+**1. Set Railway Variables (Backend service)**
 
-2. **Run migrations on deploy** so the `courses` table exists. Set the **Start Command** to:
-   ```bash
-   npm run start:deploy
-   ```
-   This runs `prisma migrate deploy` then starts the server. If you see 500 on `/api/public/courses`, check Railway logs for "Database connection failed" or "Database error" and ensure migrations have been applied.
+In Railway → your **backend** service → **Variables**, add:
 
-3. **Logs**: On startup the server logs "✅ Database connected" or "❌ Database connection failed" to help debug.
+| Variable | Value | Notes |
+|---------|--------|--------|
+| `DATABASE_URL` | `postgresql://postgres:YOUR_PASSWORD@postgres.railway.internal:5432/railway` | Use the **internal** URL from your Postgres service (Variables tab); copy from the linked Postgres service. |
+| `FRONTEND_URL` | `https://your-app.vercel.app` or `http://localhost:3000` | Comma-separated for multiple origins. |
+| `JWT_SECRET` | A long random string | e.g. `openssl rand -hex 32` |
+
+Optional (Railway often sets these when you link Postgres): `PGDATABASE`, `PGHOST`, `PGPASSWORD`, `PGPORT`, `PGUSER`. The app uses `DATABASE_URL`; the others are for reference.
+
+**2. Run migrations for the new database**
+
+**Option A – Run migrations locally (against the new DB)**
+
+Your `.env` already has `DATABASE_PUBLIC_URL` pointing to the new DB. From the backend folder:
+
+```bash
+cd backend
+npm install
+# Apply all migrations to the new database (uses DATABASE_PUBLIC_URL from .env)
+npm run prisma:migrate:deploy
+# Optional: open Prisma Studio to verify tables
+npm run prisma:studio
+```
+
+**Option B – Run migrations on every deploy (recommended)**
+
+In Railway → backend service → **Settings** → **Deploy** → set **Start Command** to:
+
+```bash
+npm run start:deploy
+```
+
+This runs `prisma migrate deploy` (applies any pending migrations) then starts the server. Use this so new deploys always have an up-to-date schema.
+
+**3. One-time migration for a brand-new DB**
+
+If the database is empty and you have not run migrations yet:
+
+- **Locally:** Run `npm run prisma:migrate:deploy` once (Option A above).
+- **On Railway:** Set Start Command to `npm run start:deploy` and deploy once; the first deploy will apply all migrations.
+
+**4. Verify**
+
+- **Locally:** `npm run dev` then call `GET /api/public/courses` (or open the frontend). You should see `[]` or course data.
+- **Railway:** After deploy, check logs for "✅ Database connected". Then call your backend URL `/health` and `/api/public/courses`.
+
+### Deploy to Railway (summary)
+
+1. **Variables:** Set `DATABASE_URL` (internal), `FRONTEND_URL`, `JWT_SECRET` in the backend service.
+2. **Start Command:** `npm run start:deploy` so migrations run on each deploy.
+3. **Logs:** On startup you’ll see "✅ Database connected" or "❌ Database connection failed".
 
 ## API Request/Response Examples
 
