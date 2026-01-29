@@ -25,12 +25,35 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Prisma: schema/table/connection issues (e.g. migrations not run, DB unreachable)
-  if (err.code && String(err.code).startsWith('P')) {
-    console.error('[Prisma] Database error. Ensure DATABASE_URL is set and migrations are deployed (e.g. prisma migrate deploy).');
+  if (err.code === 'P2003') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid reference. A related record may not exist.',
+    });
+  }
+
+  if (err.code === 'P2011') {
+    return res.status(400).json({
+      success: false,
+      message: 'A required field is missing or invalid.',
+    });
+  }
+
+  // Prisma: connection/schema issues (e.g. migrations not run, DB unreachable)
+  if (err.code === 'P1001' || err.code === 'P1002' || err.code === 'P1017') {
+    console.error('[Prisma] Database connection error. Ensure DATABASE_URL is set and database is reachable.');
     return res.status(503).json({
       success: false,
-      message: isDev ? (err.message || 'Database error') : 'Service temporarily unavailable. Please try again later.',
+      message: isDev ? (err.message || 'Database connection error') : 'Service temporarily unavailable. Please try again later.',
+    });
+  }
+
+  // Other Prisma errors (schema, raw query, etc.) — return 500 with generic message, log real error
+  if (err.code && String(err.code).startsWith('P')) {
+    console.error('[Prisma]', err.code, err.message, err.meta || '');
+    return res.status(500).json({
+      success: false,
+      message: isDev ? (err.message || 'Database error') : 'Something went wrong. Please try again.',
     });
   }
 

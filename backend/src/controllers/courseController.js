@@ -259,20 +259,28 @@ export const createCourse = async (req, res, next) => {
           }))
       : [];
 
+    const createData = {
+      name: name.trim(),
+      description: description?.trim() || null,
+      duration: duration?.trim() || null,
+      instructorName: instructorName?.trim() || null,
+      aboutInstructor: aboutInstructor?.trim() || null,
+    };
+    if (highlightsList.length > 0) {
+      createData.highlights = { create: highlightsList.map((text, i) => ({ text, order: i + 1 })) };
+    }
+    if (syllabusList.length > 0) {
+      createData.syllabus = {
+        create: syllabusList.map((m, i) => ({
+          title: String(m.title).trim(),
+          description: m.description != null ? String(m.description).trim() : null,
+          order: (m.order != null ? Number(m.order) : i + 1) || i + 1,
+        })),
+      };
+    }
+
     const course = await prisma.course.create({
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        duration: duration?.trim() || null,
-        instructorName: instructorName?.trim() || null,
-        aboutInstructor: aboutInstructor?.trim() || null,
-        highlights: highlightsList.length
-          ? { create: highlightsList.map((text, i) => ({ text, order: i + 1 })) }
-          : undefined,
-        syllabus: syllabusList.length
-          ? { create: syllabusList.map(({ title, description: desc, order }) => ({ title, description: desc || null, order })) }
-          : undefined,
-      },
+      data: createData,
       include: {
         highlights: { orderBy: { order: 'asc' } },
         syllabus: { orderBy: { order: 'asc' } },
@@ -285,6 +293,7 @@ export const createCourse = async (req, res, next) => {
       data: course,
     });
   } catch (error) {
+    console.error('[createCourse]', error.code || error.name, error.message, error.meta || '');
     next(error);
   }
 };

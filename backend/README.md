@@ -158,20 +158,26 @@ In Railway → your **backend** service → **Variables**, add:
 
 Optional (Railway often sets these when you link Postgres): `PGDATABASE`, `PGHOST`, `PGPASSWORD`, `PGPORT`, `PGUSER`. The app uses `DATABASE_URL`; the others are for reference.
 
-**2. Run migrations for the new database**
+**2. Run migrations from your local machine (using public URL)**
 
-**Option A – Run migrations locally (against the new DB)**
+Use this while you create all content locally; the public URL works from your machine. When you're done, you can switch the backend on Railway to use the internal `DATABASE_URL`.
 
-Your `.env` already has `DATABASE_PUBLIC_URL` pointing to the new DB. From the backend folder:
+1. **In `backend/.env`:** Leave `DATABASE_URL` commented out (or unset). Only `DATABASE_PUBLIC_URL` should be set to your Railway Postgres **public** URL (e.g. `trolley.proxy.rlwy.net:56539`).
+
+2. **From the backend folder, run:**
 
 ```bash
 cd backend
 npm install
-# Apply all migrations to the new database (uses DATABASE_PUBLIC_URL from .env)
+# Apply all migrations to the Railway DB (uses DATABASE_PUBLIC_URL from .env)
 npm run prisma:migrate:deploy
-# Optional: open Prisma Studio to verify tables
+# Optional: open Prisma Studio to view/edit data
 npm run prisma:studio
+# Optional: seed admin user (if you have a seed script)
+# node scripts/seedAdmin.js
 ```
+
+3. **When you're done** creating content and want the deployed backend to use the internal URL: in Railway → backend service → **Variables**, set `DATABASE_URL` to the **internal** URL (e.g. `postgres.railway.internal:5432`). Leave `DATABASE_PUBLIC_URL` only for local use.
 
 **Option B – Run migrations on every deploy (recommended)**
 
