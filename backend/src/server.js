@@ -65,8 +65,25 @@ app.use('/api/day-quizzes', dayQuizRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Start server and verify DB connection
-app.listen(PORT, async () => {
+// Graceful shutdown (Railway sends SIGTERM when stopping the container)
+async function shutdown(signal) {
+  console.log(`\n${signal} received, shutting down gracefully...`);
+  try {
+    if (server) {
+      await new Promise((resolve) => server.close(resolve));
+      console.log('HTTP server closed');
+    }
+    await prisma.$disconnect();
+    console.log('Database disconnected');
+  } catch (err) {
+    console.error('Shutdown error:', err);
+  }
+  process.exit(0);
+}
+
+let server;
+
+server = app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   try {
@@ -77,3 +94,6 @@ app.listen(PORT, async () => {
     console.error('   Ensure DATABASE_URL is set and run: npx prisma migrate deploy');
   }
 });
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
