@@ -2,7 +2,13 @@
  * Global Error Handler Middleware
  */
 export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err);
+  const status = err.status || 500;
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // Log full error for debugging (always log; Railway/logging will capture)
+  console.error('[Error]', err.message || err);
+  if (err.stack) console.error(err.stack);
+  if (err.meta) console.error('[Prisma meta]', err.meta);
 
   // Prisma errors
   if (err.code === 'P2002') {
@@ -19,6 +25,15 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // Prisma: schema/table/connection issues (e.g. migrations not run, DB unreachable)
+  if (err.code && String(err.code).startsWith('P')) {
+    console.error('[Prisma] Database error. Ensure DATABASE_URL is set and migrations are deployed (e.g. prisma migrate deploy).');
+    return res.status(503).json({
+      success: false,
+      message: isDev ? (err.message || 'Database error') : 'Service temporarily unavailable. Please try again later.',
+    });
+  }
+
   // Validation errors
   if (err.name === 'ValidationError') {
     return res.status(400).json({
@@ -28,11 +43,14 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Default error
-  res.status(err.status || 500).json({
+  // Default error — don't leak internal details in production
+  const message = status >= 500 && !isDev
+    ? 'Internal server error'
+    : (err.message || 'Internal server error');
+  res.status(status).json({
     success: false,
-    message: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    message,
+    ...(isDev && { stack: err.stack }),
   });
 };
 

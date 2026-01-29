@@ -144,6 +144,21 @@ npm run dev
 npm start
 ```
 
+### Deploy to Railway (or similar)
+
+1. **Environment variables** (in Railway dashboard):
+   - `DATABASE_URL`: Set automatically if you add a PostgreSQL plugin; otherwise use your Postgres URL.
+   - `FRONTEND_URL`: Your frontend URL (e.g. `https://your-app.vercel.app`). For multiple origins use comma-separated: `https://app.com,http://localhost:3000`.
+   - `JWT_SECRET`: A secure random string.
+
+2. **Run migrations on deploy** so the `courses` table exists. Set the **Start Command** to:
+   ```bash
+   npm run start:deploy
+   ```
+   This runs `prisma migrate deploy` then starts the server. If you see 500 on `/api/public/courses`, check Railway logs for "Database connection failed" or "Database error" and ensure migrations have been applied.
+
+3. **Logs**: On startup the server logs "✅ Database connected" or "❌ Database connection failed" to help debug.
+
 ## API Request/Response Examples
 
 ### Admin Login

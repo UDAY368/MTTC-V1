@@ -1,7 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import { API_BASE_URL } from './apiBaseUrl';
 
 /** TTL for public GET cache (ms) */
 const PUBLIC_CACHE_TTL_MS = 60 * 1000; // 1 minute
@@ -28,7 +27,7 @@ function setCached(key: string, data: unknown): void {
 }
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
