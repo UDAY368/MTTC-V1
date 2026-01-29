@@ -3,6 +3,7 @@ import prisma from '../config/database.js';
 /**
  * Get Courses (public) — for landing page, no auth required.
  * GET /api/public/courses
+ * Uses a fallback minimal query if the full query fails (e.g. missing related tables on first deploy).
  */
 export const getPublicCourses = async (req, res, next) => {
   try {
@@ -18,9 +19,30 @@ export const getPublicCourses = async (req, res, next) => {
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json({ success: true, data: courses });
-  } catch (error) {
-    next(error);
+    return res.json({ success: true, data: courses });
+  } catch (fullError) {
+    console.error('[getPublicCourses] Full query failed:', fullError.message || fullError);
+    try {
+      const coursesMinimal = await prisma.course.findMany({
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          duration: true,
+          instructorName: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      const data = coursesMinimal.map((c) => ({
+        ...c,
+        highlights: [],
+        syllabus: [],
+      }));
+      return res.json({ success: true, data });
+    } catch (minimalError) {
+      console.error('[getPublicCourses] Minimal query also failed:', minimalError.message || minimalError);
+      next(minimalError);
+    }
   }
 };
 
