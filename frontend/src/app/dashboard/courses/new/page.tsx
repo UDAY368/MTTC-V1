@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
 import { CheckCircle2 } from 'lucide-react';
@@ -65,7 +66,7 @@ export default function NewCoursePage() {
         aboutInstructor: aboutInstructor.trim() || undefined,
         highlights: highlights.filter((t) => t.trim()).length ? highlights.filter((t) => t.trim()) : undefined,
         syllabus: syllabus.some((m) => m.title.trim())
-          ? syllabus.filter((m) => m.title.trim()).map((m) => ({ title: m.title.trim(), description: m.description.trim() || undefined }))
+          ? syllabus.filter((m) => m.title.trim()).map((m) => ({ title: m.title.trim(), description: m.description?.trim() || undefined }))
           : undefined,
       };
 
@@ -220,13 +221,12 @@ export default function NewCoursePage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={`syllabus-desc-${index}`} className="text-xs">Description</Label>
-                      <Textarea
-                        id={`syllabus-desc-${index}`}
+                      <RichTextEditor
                         value={mod.description}
-                        onChange={(e) => updateSyllabusModule(index, 'description', e.target.value)}
-                        placeholder="Module description (optional)"
-                        rows={2}
+                        onChange={(value) => updateSyllabusModule(index, 'description', value)}
+                        placeholder="Module description (optional). Use bullet points, bold, lists, etc."
                         disabled={loading}
+                        className="min-h-[120px]"
                       />
                     </div>
                   </Card>

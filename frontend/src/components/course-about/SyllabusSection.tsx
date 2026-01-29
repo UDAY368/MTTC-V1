@@ -80,9 +80,16 @@ export function SyllabusSection({ syllabus }: SyllabusSectionProps) {
                     className="overflow-hidden"
                   >
                     <div className="border-t border-border/40 px-5 py-4">
-                      <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm md:text-base">
-                        {item.description || '—'}
-                      </p>
+                      {item.description && /<[a-z][\s\S]*>/i.test(item.description) ? (
+                        <div
+                          className="syllabus-description text-xs leading-relaxed text-muted-foreground sm:text-sm md:text-base [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_li]:my-0.5 [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_em]:italic"
+                          dangerouslySetInnerHTML={{ __html: item.description }}
+                        />
+                      ) : (
+                        <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm md:text-base">
+                          {item.description || '—'}
+                        </p>
+                      )}
                     </div>
                   </motion.div>
                 )}

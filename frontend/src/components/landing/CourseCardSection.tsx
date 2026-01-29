@@ -123,7 +123,7 @@ export function CourseCardSection() {
                       <CardTitle className="text-xl font-light tracking-wide text-foreground sm:text-2xl md:text-3xl lg:text-[2rem]">
                         {displayName}
                       </CardTitle>
-                      <CardDescription className="mt-1.5 text-xs leading-relaxed text-muted-foreground sm:text-sm md:text-base">
+                      <CardDescription className="my-4 rounded-lg border-l-4 border-primary bg-primary/5 px-4 py-3 text-xs leading-relaxed text-muted-foreground sm:text-sm md:text-base">
                         {displayDesc}
                       </CardDescription>
                     </div>

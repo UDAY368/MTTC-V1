@@ -209,7 +209,7 @@ export function FlashCardStack({ title, cards }: FlashCardStackProps) {
       </div>
 
       {/* Bottom row: pushed down to sit just above footer — Review / Got it + Previous */}
-      <div className="flex-shrink-0 mt-auto flex flex-col items-center gap-2 pt-[5px] md:gap-3 md:pt-3 md:pb-4 md:px-4 md:mt-[30px] md:mb-[50px]">
+      <div className="flex-shrink-0 mt-[10px] flex flex-col items-center gap-2 pt-[5px] md:gap-3 md:pt-3 md:pb-4 md:px-4 md:mt-[50px] md:mb-[50px]">
         <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
           <motion.button
             type="button"
