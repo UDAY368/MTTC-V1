@@ -1,0 +1,217 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ---------------------------------------------------------------------------
+   * LIGHT MODE — Royal Blue theme (User + Admin)
+   * Trust, clarity, authority, calm professionalism. Corporate, premium, clean.
+   * --------------------------------------------------------------------------- */
+  :root {
+    /* Backgrounds — soft neutral whites, cool grays */
+    --background: 210 25% 98%;        /* Soft white */
+    --card: 210 20% 100%;            /* Pure surface */
+    --popover: 210 20% 100%;
+    --secondary: 210 20% 94%;        /* Cool gray surface */
+    --muted: 210 18% 95%;
+    --accent: 210 25% 96%;
+    --input: 210 18% 95%;
+
+    /* Text — primary, secondary, muted */
+    --foreground: 222 47% 11%;       /* Near black, readable */
+    --card-foreground: 222 47% 11%;
+    --popover-foreground: 222 47% 11%;
+    --secondary-foreground: 222 40% 18%;
+    --muted-foreground: 215 16% 47%; /* Cool gray text */
+
+    /* Primary — Royal Blue */
+    --primary: 221 83% 53%;          /* Royal Blue */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 221 83% 45%;    /* Darker blue on hover */
+    --primary-dark: 221 83% 40%;     /* Pressed/active */
+    --ring: 221 83% 53%;
+
+    /* Destructive, warning */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+
+    /* Border & radius */
+    --border: 214 20% 88%;
+    --radius: 0.5rem;
+
+    /* Charts */
+    --chart-1: 221 83% 53%;
+    --chart-2: 213 95% 68%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 72% 51%;
+    --chart-5: 215 16% 47%;
+  }
+
+  /* ---------------------------------------------------------------------------
+   * DARK MODE — existing meditation-optimized theme (unchanged)
+   * --------------------------------------------------------------------------- */
+  .dark {
+    --background: 210 25% 8%;
+    --card: 220 25% 14%;
+    --popover: 220 25% 14%;
+    --secondary: 220 20% 18%;
+    --muted: 220 20% 18%;
+    --accent: 220 20% 18%;
+    --input: 220 20% 18%;
+
+    --foreground: 210 20% 92%;
+    --card-foreground: 210 20% 92%;
+    --popover-foreground: 210 20% 92%;
+    --secondary-foreground: 210 20% 92%;
+    --muted-foreground: 215 10% 65%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 210 20% 92%;
+    --primary-hover: 142 70% 45%;
+    --primary-dark: 142 80% 30%;
+    --ring: 142 76% 36%;
+
+    --destructive: 0 90% 71%;
+    --destructive-foreground: 210 20% 92%;
+    --warning: 43 96% 56%;
+
+    --border: 220 15% 22%;
+
+    --chart-1: 142 76% 36%;
+    --chart-2: 213 95% 68%;
+    --chart-3: 43 96% 56%;
+    --chart-4: 0 90% 71%;
+    --chart-5: 215 10% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* Responsive base font size - larger on desktop */
+    font-size: 14px; /* Mobile base */
+  }
+  
+  /* Desktop: larger base font */
+  @media (min-width: 1024px) {
+    body {
+      font-size: 16px; /* Desktop base */
+    }
+  }
+  
+  /* Large desktop: slightly larger */
+  @media (min-width: 1280px) {
+    body {
+      font-size: 17px;
+    }
+  }
+}
+
+/* Custom scrollbar for dark mode */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-secondary;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-md;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground;
+}
+
+/* Rich text content (admin preview + course-view resources) - responsive */
+.rich-text-content {
+  line-height: 1.75;
+  font-size: 0.875rem; /* Mobile: 14px */
+}
+@media (min-width: 1024px) {
+  .rich-text-content {
+    font-size: 1rem; /* Desktop: 16px */
+  }
+}
+.rich-text-content h1, .rich-text-content h2, .rich-text-content h3,
+.rich-text-content h4, .rich-text-content h5, .rich-text-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+.rich-text-content h1 { 
+  font-size: 1.75rem; /* Mobile */
+}
+@media (min-width: 1024px) {
+  .rich-text-content h1 { font-size: 2.25rem; } /* Desktop: larger */
+}
+.rich-text-content h2 { 
+  font-size: 1.375rem; /* Mobile */
+}
+@media (min-width: 1024px) {
+  .rich-text-content h2 { font-size: 1.75rem; } /* Desktop */
+}
+.rich-text-content h3 { 
+  font-size: 1.125rem; /* Mobile */
+}
+@media (min-width: 1024px) {
+  .rich-text-content h3 { font-size: 1.375rem; } /* Desktop */
+}
+.rich-text-content h4 { 
+  font-size: 1rem; /* Mobile */
+}
+@media (min-width: 1024px) {
+  .rich-text-content h4 { font-size: 1.125rem; } /* Desktop */
+}
+.rich-text-content p { 
+  margin-bottom: 1em;
+  font-size: inherit;
+}
+.rich-text-content ul, .rich-text-content ol {
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+}
+.rich-text-content li { margin-bottom: 0.5em; }
+.rich-text-content strong { font-weight: 600; }
+.rich-text-content em { font-style: italic; }
+.rich-text-content u { text-decoration: underline; }
+.rich-text-content blockquote {
+  border-left: 4px solid hsl(var(--border));
+  padding-left: 1em;
+  margin: 1em 0;
+  font-style: italic;
+}
+.rich-text-content a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}
+.rich-text-content a:hover { text-decoration: none; }
+.rich-text-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+  margin: 1em 0;
+}
+/* Tables (e.g. from Word paste or Brief Notes) - MS Word style */
+.rich-text-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+.rich-text-content td,
+.rich-text-content th {
+  border: 1px solid hsl(var(--border));
+  padding: 0.5em 0.75em;
+  vertical-align: top;
+}
+.rich-text-content th {
+  font-weight: 600;
+  background: hsl(var(--muted) / 0.5);
+}

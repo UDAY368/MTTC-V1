@@ -1,0 +1,404 @@
+// Prisma Schema for Meditation Teacher Training Quiz Application
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// CORE ENTITIES
+// ============================================
+
+model Course {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  duration         String?  // e.g. "6 weeks", "40 hours"
+  instructorName   String?
+  aboutInstructor  String?  // About Instructor text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  quizzes     Quiz[]
+  days        Day[]
+  highlights  CourseHighlight[]
+  syllabus    CourseModule[]
+
+  @@map("courses")
+}
+
+model CourseHighlight {
+  id        String   @id @default(cuid())
+  courseId  String
+  text      String   // Highlight text
+  order     Int      // Order within course
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([courseId, order])
+  @@map("course_highlights")
+}
+
+model CourseModule {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String   // Module title
+  description String?  // Module description
+  order       Int      // Order within syllabus
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([courseId, order])
+  @@map("course_modules")
+}
+
+model Quiz {
+  id              String   @id @default(cuid())
+  courseId        String
+  title           String   // e.g., "Day 1 Quiz"
+  description     String?
+  durationMinutes Int      // Quiz duration in minutes
+  uniqueUrl       String   @unique // Public URL slug (e.g., "meditation-day-1-quiz-abc123")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions       Question[]
+  attempts        QuizAttempt[]
+  dayQuizzes      DayQuiz[] // Many-to-many with Days (reusable quizzes)
+
+  @@index([courseId])
+  @@index([uniqueUrl])
+  @@map("quizzes")
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  quizId    String
+  text      String   // Question text (English)
+  textTe    String?  // Question text (Telugu)
+  type      QuestionType // SINGLE_CHOICE or MULTIPLE_CHOICE
+  order     Int      // Order of question in quiz (1, 2, 3...)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options   Option[]
+  userAnswers UserAnswer[]
+
+  @@index([quizId])
+  @@index([quizId, order])
+  @@map("questions")
+}
+
+enum QuestionType {
+  SINGLE_CHOICE    // Radio button - one answer
+  MULTIPLE_CHOICE  // Checkbox - multiple answers
+}
+
+model Option {
+  id        String   @id @default(cuid())
+  questionId String
+  text      String   // Option text (English)
+  textTe    String?  // Option text (Telugu)
+  isCorrect Boolean  // Whether this option is a correct answer
+  order     Int      // Order of option (1, 2, 3...)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  question  Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userAnswers UserAnswer[]
+
+  @@index([questionId])
+  @@index([questionId, order])
+  @@map("options")
+}
+
+// ============================================
+// QUIZ ATTEMPT & ANSWERS
+// ============================================
+
+model QuizAttempt {
+  id            String   @id @default(cuid())
+  quizId        String
+  uniqueUrl     String   // The quiz URL used for this attempt (for tracking)
+  language      String   @default("en") // Language selected for this attempt (en or te)
+  startedAt     DateTime @default(now())
+  submittedAt   DateTime? // Null until submitted
+  score         Int?     // Calculated score (null until submitted)
+  totalQuestions Int     // Total questions in quiz at time of attempt
+  isSubmitted   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  userAnswers   UserAnswer[]
+
+  @@index([quizId])
+  @@index([uniqueUrl])
+  @@index([submittedAt])
+  @@map("quiz_attempts")
+}
+
+model UserAnswer {
+  id        String   @id @default(cuid())
+  attemptId String
+  questionId String
+  optionId  String   // The option the user selected
+  createdAt DateTime @default(now())
+
+  // Relations
+  attempt   QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question  Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  option    Option      @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate answers (same option selected twice for same question in same attempt)
+  @@unique([attemptId, questionId, optionId])
+  @@index([attemptId])
+  @@index([questionId])
+  @@index([optionId])
+  @@map("user_answers")
+}
+
+// ============================================
+// ADMIN AUTHENTICATION (Future)
+// ============================================
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed password
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admins")
+}
+
+// ============================================
+// LMS EXTENSION: DAYS & RESOURCES
+// ============================================
+
+// Day represents a lesson module within a Course
+// Example: "Day 1", "Day 2", "Day 3" under "Meditation Teacher Training Program"
+model Day {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String   // e.g., "Day 1", "Day 2"
+  description String?  // Optional day description
+  order       Int      // Order of day within course (1, 2, 3...)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  resources   Resource[]
+  dayQuizzes  DayQuiz[] // Many-to-many with Quizzes
+
+  @@index([courseId])
+  @@index([courseId, order])
+  @@map("days")
+}
+
+// ResourceType enum for polymorphic resource handling
+enum ResourceType {
+  VIDEO           // Video URL (YouTube/Vimeo/external)
+  NOTES           // Multiple paragraphs with headings (Key Points Notes)
+  BRIEF_NOTES     // Brief notes with heading + rich content (tables, Word-style formatting)
+  FLASH_CARDS     // Flip cards (question/answer pairs)
+  SHORT_QUESTIONS // Q&A pairs
+  ASSIGNMENT      // Assignment question
+  GLOSSARY        // Glossary words and meanings
+  RECOMMENDATION  // Multiple recommendations (title + content)
+  // Note: QUIZZES are handled separately via DayQuiz junction table (not a Resource type)
+}
+
+// Resource represents any content item within a Day
+// Uses polymorphic pattern: type discriminator + type-specific relations
+model Resource {
+  id          String       @id @default(cuid())
+  dayId       String
+  type        ResourceType
+  title       String?      // Optional title for the resource
+  order       Int          // Order within the day (for drag-and-drop reordering)
+  isVisible   Boolean      @default(true) // Toggle visibility for end users
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Type-specific fields (only one will be used per resource type)
+  // VIDEO: videoUrl
+  videoUrl    String?      // YouTube/Vimeo/external URL
+
+  // SHORT_QUESTIONS: question, answer
+  question    String?      // For SHORT_QUESTIONS type
+  answer      String?      // For SHORT_QUESTIONS type
+
+  // ASSIGNMENT: assignmentQuestion
+  assignmentQuestion String? // For ASSIGNMENT type
+
+  // Relations
+  day         Day          @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  noteParagraphs NoteParagraph[] // For NOTES type
+  flashCards  FlashCard[] // For FLASH_CARDS type
+  shortQuestions ShortQuestion[] // For SHORT_QUESTIONS type
+  assignmentQuestions AssignmentQuestion[] // For ASSIGNMENT type
+  glossaryWords GlossaryWord[] // For GLOSSARY type
+  recommendations Recommendation[] // For RECOMMENDATION type
+
+  @@index([dayId])
+  @@index([dayId, order])
+  @@index([dayId, type])
+  @@map("resources")
+}
+
+// NoteParagraph represents a single paragraph within a NOTES resource
+// Each NOTES resource can have multiple paragraphs
+model NoteParagraph {
+  id          String   @id @default(cuid())
+  resourceId  String
+  heading     String?  // Optional heading for this paragraph
+  content     String   // Paragraph content
+  order       Int      // Order within the notes resource
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([resourceId, order])
+  @@map("note_paragraphs")
+}
+
+// FlashCard represents a single flip card within a FLASH_CARDS resource
+// Each FLASH_CARDS resource can have multiple cards
+model FlashCard {
+  id          String   @id @default(cuid())
+  resourceId  String
+  question    String   // Front of card
+  answer      String   // Back of card
+  order       Int      // Order within the flash cards resource
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([resourceId, order])
+  @@map("flash_cards")
+}
+
+// ShortQuestion represents a single Q&A pair within a SHORT_QUESTIONS resource
+// Each SHORT_QUESTIONS resource can have multiple questions
+model ShortQuestion {
+  id          String   @id @default(cuid())
+  resourceId  String
+  question    String   // Question text
+  answer      String   // Answer text
+  order       Int      // Order within the short questions resource
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([resourceId, order])
+  @@map("short_questions")
+}
+
+// AssignmentQuestion represents a single assignment question within an ASSIGNMENT resource
+// Each ASSIGNMENT resource can have multiple questions
+model AssignmentQuestion {
+  id          String   @id @default(cuid())
+  resourceId  String
+  question    String   // Assignment question text
+  order       Int      // Order within the assignment resource
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([resourceId, order])
+  @@map("assignment_questions")
+}
+
+// GlossaryWord represents a single word and its meaning within a GLOSSARY resource
+// Each GLOSSARY resource can have multiple words
+model GlossaryWord {
+  id          String   @id @default(cuid())
+  resourceId  String
+  word        String   // The word/term
+  meaning     String   // The meaning/definition
+  order       Int      // Order within the glossary resource
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([resourceId, order])
+  @@map("glossary_words")
+}
+
+// Recommendation represents a single recommendation (title + content) within a RECOMMENDATION resource
+model Recommendation {
+  id          String   @id @default(cuid())
+  resourceId  String
+  title       String   // Recommendation title
+  content     String   // Recommendation content
+  order       Int      // Order within the resource
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@index([resourceId, order])
+  @@map("recommendations")
+}
+
+// DayQuiz junction table for many-to-many relationship
+// Allows attaching multiple quizzes to a single Day
+// Allows reusing the same quiz across multiple Days
+model DayQuiz {
+  id          String   @id @default(cuid())
+  dayId       String
+  quizId      String
+  order       Int      // Order of quiz within the day
+  isVisible   Boolean  @default(true) // Toggle visibility for end users
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  day         Day      @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate quiz attachments to same day
+  @@unique([dayId, quizId])
+  @@index([dayId])
+  @@index([dayId, order])
+  @@index([quizId])
+  @@map("day_quizzes")
+}

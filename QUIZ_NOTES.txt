@@ -1,0 +1,90 @@
+
+Credentilas:
+~~~~~~~~~~~~
+DATABASE_URL = postgresql://postgres:YGjkpXzMWTfYMJfeDWpsYeLzxGiROQTP@postgres.railway.internal:5432/railway
+JWT_SECRET=mysupersecretkey123456789railwaydb
+
+DB_HOST=postgres.railway.internal
+DB_PORT=5432
+DB_NAME=RAILWAYDB
+DB_USER=postgres
+DB_PASSWORD=YGjkpXzMWTfYMJfeDWpsYeLzxGiROQTP
+JWT_SECRET=mysupersecretkey123456789railwaydb
+
+-------------
+- To run the server
+>>> cd frontend 
+>>> npm run dev
+
+
+
+-------------------
+Admin Login
+Email : admin@example.com
+Password : admin123
+
+
+--------------------
+Quiz Prompt for NotebookLM
+
+Generate Quizes in Telugu Language
+Generate 10 Question 
+The question should be like 4 easy 3 Medium and 3 Hard it covers the in depth end to end content 
+
+
+
+
+
+Need a modification in the Database as well as in the backend api and the Admin Front end 
+
+- In the Admin panel when create quiz for every question need to take 2 languages both English and Telugu as well parallely
+- In the User Quiz Need to ask select the language based on the selection if the user select Telugu then telugu questions will display if user select English then english questions will display 
+
+Prompt
+~~~~~~
+- I want to prepare a simple quiz application with complete frontend and backend create a folder like frontend and backend folder build the proper and premium application
+
+- Requirements
+	- User can able to take the quiz
+		- Attempt the quiz
+		- There is a Timer for quiz the entire screen with quiz only not able to go to the other screens
+		- Once Timer is completed what ever the answer user marked at that point It should be submited
+		- once submited user can see the result like out of total marks how many marks user get
+			- Show answers need to show the actual answer and user answer
+			- user can able to retake the exam
+			
+	- UI instructions for Quiz
+		- should fallow the standard UI UX design principles and use the proper premium colors 
+		- The hole Quiz UI should be like a gamification mode with advanced animations with premium functionalites
+		- Quiz Main Header like
+			- Meditation Teacher Training Program
+			- Quiz Title (Day 1)
+		- On Left side all the question numbers should display based on the numbers user can navigate the question
+		- On right side once click on the numbers that corresponding questions should display
+	
+	- Need an admin page
+		- where admin can create update and delete the quizes
+		- The Flow will be
+			- Create Course
+				- under the course create a quiz
+			- Create Quiz
+				- Admin dynamically add the questions
+				- Need to choose the type of question
+					- Radio
+					- Check Mark
+				- Correct Answer
+			- Once the Quiz is created then Need to generate the unique URL for every Quiz
+			- So that Users can Directly take the Quiz
+	
+	- Technology
+		Frontend
+			Next.js (App Router)
+			Tailwind CSS
+			Framer Motion (animations / gamification)
+			ShadCN UI (premium UI components)
+		
+		Backend
+			Node.js + Express
+			PostgreSQL
+			Prisma ORM
+			JWT (admin auth only)
