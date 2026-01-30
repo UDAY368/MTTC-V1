@@ -14,6 +14,8 @@
     "prisma:studio": "node scripts/prisma-with-env.js studio",
     "prisma:push": "node scripts/prisma-with-env.js db push",
     "prisma:migrate:deploy": "node scripts/prisma-with-env.js migrate deploy",
+    "seed:admin": "node scripts/seedAdmin.js",
+    "update-admin-password": "node scripts/updateAdminPassword.js",
     "add-brief-notes-enum": "node scripts/add-brief-notes-enum.js"
   },
   "keywords": ["quiz", "meditation", "lms"],

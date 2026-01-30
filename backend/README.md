@@ -58,37 +58,24 @@ npm run prisma:migrate
 npm run prisma:studio
 ```
 
-### 4. Create Admin User (Optional)
+### 4. Create Admin User (Required for login)
 
-You can create an admin user using Prisma Studio or by running a script. For now, you can use Prisma Studio to manually create an admin:
+Login uses the **Admin** table (`admins`) in the database. Create an admin so you can sign in:
 
-1. Run `npm run prisma:studio`
-2. Navigate to `admins` table
-3. Create a new admin with:
-   - `email`: Your admin email
-   - `password`: Use bcrypt to hash your password (or create a script)
-
-Or create a script to seed admin:
-
-```javascript
-// scripts/seedAdmin.js
-import bcrypt from 'bcryptjs';
-import prisma from '../src/config/database.js';
-
-const email = 'admin@example.com';
-const password = 'admin123';
-const hashedPassword = await bcrypt.hash(password, 10);
-
-await prisma.admin.create({
-  data: {
-    email,
-    password: hashedPassword,
-    name: 'Admin User',
-  },
-});
-
-console.log('Admin created successfully');
+```bash
+npm run seed:admin
 ```
+
+This creates an admin with:
+- **Email:** `admin@example.com`
+- **Password:** `admin123`
+
+If an admin with that email already exists, the script will skip creation and print the credentials. After running it, you can log in at the frontend login page.
+
+Alternatively, you can create an admin via Prisma Studio:
+1. Run `npm run prisma:studio`
+2. Open the `admins` table
+3. Add a row with `email`, `password` (must be bcrypt-hashed), and optional `name`
 
 ## API Endpoints
 
@@ -173,8 +160,8 @@ npm install
 npm run prisma:migrate:deploy
 # Optional: open Prisma Studio to view/edit data
 npm run prisma:studio
-# Optional: seed admin user (if you have a seed script)
-# node scripts/seedAdmin.js
+# Optional: seed admin user so you can log in
+# npm run seed:admin
 ```
 
 3. **When you're done** creating content and want the deployed backend to use the internal URL: in Railway → backend service → **Variables**, set `DATABASE_URL` to the **internal** URL (e.g. `postgres.railway.internal:5432`). Leave `DATABASE_PUBLIC_URL` only for local use.

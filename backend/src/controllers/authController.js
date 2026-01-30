@@ -5,22 +5,39 @@ import prisma from '../config/database.js';
 /**
  * Admin Login
  * POST /api/auth/login
+ * Authenticates against the Admin table (admins) in the database.
  */
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const rawEmail = req.body.email;
+    const password = req.body.password;
 
     // Validation
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       return res.status(400).json({
         success: false,
         message: 'Email and password are required',
       });
     }
 
-    // Find admin
+    const email = String(rawEmail).trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error. JWT_SECRET is not set.',
+      });
+    }
+
+    // Find admin in Admin table (admins)
     const admin = await prisma.admin.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email },
     });
 
     if (!admin) {
