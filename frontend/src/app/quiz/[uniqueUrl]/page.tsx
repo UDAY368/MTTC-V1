@@ -85,6 +85,8 @@ export default function QuizPage() {
   const [markedForReview, setMarkedForReview] = useState<Set<string>>(new Set());
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [nameStepDone, setNameStepDone] = useState(false);
 
   // Helper function to get localized text
   const getLocalizedText = (item: { text: string; textTe?: string }) => {
@@ -292,6 +294,58 @@ export default function QuizPage() {
   }
 
   if (!attempt && quiz) {
+    // Step 1: Name entry (before language)
+    if (!nameStepDone) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md w-full"
+          >
+            <Card>
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl sm:text-2xl font-light">{quiz.course.name}</CardTitle>
+                <p className="text-muted-foreground mt-1 text-sm sm:text-base">{quiz.title}</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <label htmlFor="quiz-user-name" className="text-sm font-medium text-foreground block text-center">
+                    Please enter your name / దయచేసి మీ పేరు నమోదు చేయండి
+                  </label>
+                  <input
+                    id="quiz-user-name"
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value.trim())}
+                    placeholder={selectedLanguage === 'en' ? 'Your name' : 'మీ పేరు'}
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 text-base"
+                    maxLength={100}
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    const name = userName.trim();
+                    if (name) {
+                      setUserName(name);
+                      setNameStepDone(true);
+                    }
+                  }}
+                  className="w-full"
+                  size="lg"
+                  disabled={!userName.trim()}
+                >
+                  Continue / కొనసాగించండి
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      );
+    }
+
+    // Step 2: Language selection + Start
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <motion.div
@@ -303,6 +357,7 @@ export default function QuizPage() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-light">{quiz.course.name}</CardTitle>
               <p className="text-muted-foreground mt-2">{quiz.title}</p>
+              <p className="text-sm text-primary font-medium mt-1">Hi, {userName}</p>
             </CardHeader>
             <CardContent className="space-y-6">
               {quiz.description && (
@@ -382,6 +437,16 @@ export default function QuizPage() {
             <Card className="bg-card overflow-hidden">
               <CardContent className="pt-6 pb-8">
                 <div className="text-center space-y-6">
+                  {/* User name */}
+                  {userName && (
+                    <p className="text-lg font-medium text-foreground">
+                      {selectedLanguage === 'en' ? (
+                        <>Well done, <span className="text-primary font-semibold">{userName}</span>!</>
+                      ) : (
+                        <>చాలా బాగుంది, <span className="text-primary font-semibold">{userName}</span>!</>
+                      )}
+                    </p>
+                  )}
                   {/* Grade Circle */}
                   <motion.div
                     initial={{ scale: 0 }}
@@ -745,7 +810,12 @@ export default function QuizPage() {
           <div className="space-y-4">
 
             <div>
-              <h3 className="text-lg font-light">{quiz.title}</h3>
+              {userName && (
+                <p className="text-sm font-medium text-foreground truncate" title={userName}>
+                  {selectedLanguage === 'en' ? 'Name: ' : 'పేరు: '}{userName}
+                </p>
+              )}
+              <h3 className="text-lg font-light mt-1">{quiz.title}</h3>
               <p className="text-xs text-muted-foreground mt-1">
                 {selectedLanguage === 'en' ? 'Language: English' : 'భాష: తెలుగు'}
               </p>
@@ -869,9 +939,14 @@ export default function QuizPage() {
       <main className="flex-1 flex flex-col">
         {/* Mobile/Tablet Top Navigation Panel - Fixed at top */}
         <div className="lg:hidden sticky top-0 z-30 bg-card border-b border-border">
-          {/* Top Row: Timer and Progress */}
+          {/* Top Row: Name, Title, Timer */}
           <div className="p-3 flex items-center justify-between gap-4">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
+              {userName && (
+                <p className="text-sm font-medium text-foreground truncate">
+                  {selectedLanguage === 'en' ? 'Name: ' : 'పేరు: '}{userName}
+                </p>
+              )}
               <h3 className="text-sm font-medium truncate">{quiz.title}</h3>
               <p className="text-xs text-muted-foreground">
                 {selectedLanguage === 'en' ? 'Language: English' : 'భాష: తెలుగు'}

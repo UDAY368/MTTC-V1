@@ -16,6 +16,7 @@ export interface LearnResource {
   answer?: string | null;
   assignmentQuestion?: string | null;
   noteParagraphs?: { id: string; heading: string | null; content: string; order: number }[];
+  briefNotesContent?: string | null; // BRIEF_NOTES: single rich text (blog-style)
   flashCards?: { id: string; question: string; answer: string; order: number }[];
   shortQuestions?: { id: string; question: string; answer: string; order: number }[];
   assignmentQuestions?: { id: string; question: string; answer: string; order: number }[];

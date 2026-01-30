@@ -221,7 +221,7 @@ model Day {
 enum ResourceType {
   VIDEO           // Video URL (YouTube/Vimeo/external)
   NOTES           // Multiple paragraphs with headings (Key Points Notes)
-  BRIEF_NOTES     // Brief notes with heading + rich content (tables, Word-style formatting)
+  BRIEF_NOTES     // Brief notes: single rich text (blog-style, no paragraphs)
   FLASH_CARDS     // Flip cards (question/answer pairs)
   SHORT_QUESTIONS // Q&A pairs
   ASSIGNMENT      // Assignment question
@@ -252,6 +252,9 @@ model Resource {
 
   // ASSIGNMENT: assignmentQuestion
   assignmentQuestion String? // For ASSIGNMENT type
+
+  // BRIEF_NOTES: single rich text (blog-style content)
+  briefNotesContent String? @db.Text // For BRIEF_NOTES type
 
   // Relations
   day         Day          @relation(fields: [dayId], references: [id], onDelete: Cascade)

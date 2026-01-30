@@ -70,6 +70,7 @@ interface Resource {
   answer?: string; // Legacy: single Q&A for SHORT_QUESTIONS
   assignmentQuestion?: string;
   noteParagraphs?: NoteParagraph[];
+  briefNotesContent?: string | null;
   flashCards?: FlashCard[];
   shortQuestions?: Array<{ id: string; question: string; answer: string; order: number }>;
   assignmentQuestions?: Array<{ id: string; question: string; order: number }>;
@@ -984,7 +985,7 @@ function ResourcePreviewModal({ resource, onClose }: {
 
   // Initialize collapsed states: all collapsed except the first item
   useEffect(() => {
-    // For Notes / Brief Notes paragraphs: collapse all except first
+    // For Notes (or legacy Brief Notes) paragraphs: collapse all except first
     if ((resource.type === 'NOTES' || resource.type === 'BRIEF_NOTES') && resource.noteParagraphs && resource.noteParagraphs.length > 0) {
       const allIdsExceptFirst = resource.noteParagraphs
         .slice(1)
@@ -1135,7 +1136,88 @@ function ResourcePreviewModal({ resource, onClose }: {
                 )}
               </div>
             )}
-            {(resource.type === 'NOTES' || resource.type === 'BRIEF_NOTES') && resource.noteParagraphs && (
+            {resource.type === 'BRIEF_NOTES' && resource.briefNotesContent != null && resource.briefNotesContent !== '' && (
+              <div className="space-y-3">
+                <style jsx global>{`
+                  .rich-text-content {
+                    line-height: 1.75;
+                  }
+                  .rich-text-content h1,
+                  .rich-text-content h2,
+                  .rich-text-content h3,
+                  .rich-text-content h4,
+                  .rich-text-content h5,
+                  .rich-text-content h6 {
+                    font-weight: 600;
+                    margin-top: 1.5em;
+                    margin-bottom: 0.5em;
+                  }
+                  .rich-text-content h1 { font-size: 2em; }
+                  .rich-text-content h2 { font-size: 1.5em; }
+                  .rich-text-content h3 { font-size: 1.25em; }
+                  .rich-text-content h4 { font-size: 1.1em; }
+                  .rich-text-content p {
+                    margin-bottom: 1em;
+                  }
+                  .rich-text-content ul,
+                  .rich-text-content ol {
+                    margin-left: 1.5em;
+                    margin-bottom: 1em;
+                  }
+                  .rich-text-content li {
+                    margin-bottom: 0.5em;
+                  }
+                  .rich-text-content strong {
+                    font-weight: 600;
+                  }
+                  .rich-text-content em {
+                    font-style: italic;
+                  }
+                  .rich-text-content u {
+                    text-decoration: underline;
+                  }
+                  .rich-text-content blockquote {
+                    border-left: 4px solid hsl(var(--border));
+                    padding-left: 1em;
+                    margin: 1em 0;
+                    font-style: italic;
+                  }
+                  .rich-text-content a {
+                    color: hsl(var(--primary));
+                    text-decoration: underline;
+                  }
+                  .rich-text-content a:hover {
+                    text-decoration: none;
+                  }
+                  .rich-text-content img {
+                    max-width: 100%;
+                    height: auto;
+                    border-radius: 0.375rem;
+                    margin: 1em 0;
+                  }
+                  .rich-text-content table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 1em 0;
+                  }
+                  .rich-text-content td,
+                  .rich-text-content th {
+                    border: 1px solid hsl(var(--border));
+                    padding: 0.5em 0.75em;
+                    vertical-align: top;
+                  }
+                  .rich-text-content th {
+                    font-weight: 600;
+                    background: hsl(var(--muted) / 0.5);
+                  }
+                `}</style>
+                <div
+                  className="text-foreground rich-text-content prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-p:leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: resource.briefNotesContent }}
+                />
+              </div>
+            )}
+            {((resource.type === 'NOTES') || (resource.type === 'BRIEF_NOTES' && (resource.briefNotesContent == null || resource.briefNotesContent === ''))) && resource.noteParagraphs && resource.noteParagraphs.length > 0 && (
               <div className="space-y-3">
                 <style jsx global>{`
                   .rich-text-content {

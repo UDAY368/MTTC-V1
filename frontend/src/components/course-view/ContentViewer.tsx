@@ -43,7 +43,7 @@ function ResourceContent({ item, currentItems = [] }: { item: DayItem; currentIt
   useEffect(() => {
     if (item.type === 'resource') {
       const r = item.resource;
-      if ((r.type === 'NOTES' || r.type === 'BRIEF_NOTES') && r.noteParagraphs?.length) {
+      if (r.type === 'NOTES' && r.noteParagraphs?.length) {
         setCollapsedNotes(new Set(r.noteParagraphs.slice(1).map((p) => p.id)));
       } else {
         setCollapsedNotes(new Set());
@@ -182,6 +182,20 @@ function ResourceContent({ item, currentItems = [] }: { item: DayItem; currentIt
     );
   }
 
+  // BRIEF_NOTES: single rich text (blog-style)
+  if (r.type === 'BRIEF_NOTES' && (r.briefNotesContent != null && r.briefNotesContent !== '')) {
+    return (
+      <div className="space-y-3">
+        <h2 className="text-base font-medium text-foreground sm:text-lg md:text-xl">{title}</h2>
+        <div
+          className="text-foreground rich-text-content prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-p:leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: r.briefNotesContent }}
+        />
+      </div>
+    );
+  }
+
+  // Legacy BRIEF_NOTES (noteParagraphs) or NOTES: paragraph list
   if ((r.type === 'NOTES' || r.type === 'BRIEF_NOTES') && r.noteParagraphs?.length) {
     return (
       <div className="space-y-3">

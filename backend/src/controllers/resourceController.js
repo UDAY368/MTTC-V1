@@ -127,6 +127,7 @@ export const createResource = async (req, res, next) => {
       assignmentQuestion, // ASSIGNMENT (legacy - single question)
       assignmentQuestions, // ASSIGNMENT (array of {question})
       noteParagraphs, // NOTES (array of {heading, content})
+      briefNotesContent, // BRIEF_NOTES (single rich text string)
       flashCards, // FLASH_CARDS (array of {question, answer})
       glossaryWords, // GLOSSARY (array of {word, meaning})
       recommendations, // RECOMMENDATION (array of {title, content})
@@ -212,11 +213,26 @@ export const createResource = async (req, res, next) => {
       }
     }
 
-    if ((type === 'NOTES' || type === 'BRIEF_NOTES') && (!Array.isArray(noteParagraphs) || noteParagraphs.length === 0)) {
+    if (type === 'NOTES' && (!Array.isArray(noteParagraphs) || noteParagraphs.length === 0)) {
       return res.status(400).json({
         success: false,
-        message: 'noteParagraphs array is required for NOTES and BRIEF_NOTES types',
+        message: 'noteParagraphs array is required for NOTES type',
       });
+    }
+
+    if (type === 'BRIEF_NOTES') {
+      if (briefNotesContent === undefined || briefNotesContent === null) {
+        return res.status(400).json({
+          success: false,
+          message: 'briefNotesContent is required for BRIEF_NOTES type',
+        });
+      }
+      if (typeof briefNotesContent !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'briefNotesContent must be a string',
+        });
+      }
     }
 
     if (type === 'FLASH_CARDS' && (!Array.isArray(flashCards) || flashCards.length === 0)) {
@@ -261,13 +277,15 @@ export const createResource = async (req, res, next) => {
             ? assignmentQuestions[0].question.trim() 
             : assignmentQuestion?.trim() || null)
         : null,
+      // For BRIEF_NOTES: single rich text content
+      briefNotesContent: type === 'BRIEF_NOTES' ? (briefNotesContent?.trim() || null) : null,
     };
 
     // Create resource with nested data
     const resource = await prisma.resource.create({
       data: {
         ...resourceData,
-        ...((type === 'NOTES' || type === 'BRIEF_NOTES') && {
+        ...(type === 'NOTES' && {
           noteParagraphs: {
             create: noteParagraphs.map((para, index) => ({
               heading: para.heading?.trim() || null,
@@ -381,6 +399,7 @@ export const updateResource = async (req, res, next) => {
       assignmentQuestion,
       assignmentQuestions,
       noteParagraphs,
+      briefNotesContent,
       flashCards,
       glossaryWords,
       recommendations,
@@ -537,8 +556,8 @@ export const updateResource = async (req, res, next) => {
       };
     }
 
-    // Handle NOTES and BRIEF_NOTES paragraphs update
-    if ((type === 'NOTES' || type === 'BRIEF_NOTES') && noteParagraphs !== undefined) {
+    // Handle NOTES paragraphs update
+    if (type === 'NOTES' && noteParagraphs !== undefined) {
       if (!Array.isArray(noteParagraphs) || noteParagraphs.length === 0) {
         return res.status(400).json({
           success: false,
@@ -546,7 +565,6 @@ export const updateResource = async (req, res, next) => {
         });
       }
 
-      // Delete existing paragraphs and create new ones
       await prisma.noteParagraph.deleteMany({
         where: { resourceId: id },
       });
@@ -558,6 +576,15 @@ export const updateResource = async (req, res, next) => {
           order: index + 1,
         })),
       };
+    }
+
+    // Handle BRIEF_NOTES: single rich text content
+    if (type === 'BRIEF_NOTES' && briefNotesContent !== undefined) {
+      updateData.briefNotesContent = briefNotesContent?.trim() || null;
+      // Remove any legacy noteParagraphs when updating BRIEF_NOTES
+      await prisma.noteParagraph.deleteMany({
+        where: { resourceId: id },
+      });
     }
 
     // Handle FLASH_CARDS update

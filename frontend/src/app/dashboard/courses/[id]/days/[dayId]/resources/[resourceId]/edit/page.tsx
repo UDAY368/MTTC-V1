@@ -30,9 +30,12 @@ export default function EditResourcePage() {
   // VIDEO fields
   const [videoUrl, setVideoUrl] = useState('');
 
-  // NOTES fields
+  // NOTES fields (paragraphs)
   const [noteParagraphs, setNoteParagraphs] = useState<Array<{ heading: string; content: string }>>([]);
   const [collapsedParagraphs, setCollapsedParagraphs] = useState<Set<number>>(new Set());
+
+  // BRIEF_NOTES: single rich text (blog-style)
+  const [briefNotesContent, setBriefNotesContent] = useState('');
 
   // FLASH_CARDS fields
   const [flashCards, setFlashCards] = useState<Array<{ question: string; answer: string }>>([]);
@@ -72,13 +75,27 @@ export default function EditResourcePage() {
           setVideoUrl(resource.videoUrl || '');
           break;
         case 'NOTES':
-        case 'BRIEF_NOTES':
           setNoteParagraphs(
             resource.noteParagraphs?.map((p: any) => ({
               heading: p.heading || '',
               content: p.content,
             })) || []
           );
+          break;
+        case 'BRIEF_NOTES':
+          if (resource.briefNotesContent != null && resource.briefNotesContent !== '') {
+            setBriefNotesContent(resource.briefNotesContent);
+          } else if (resource.noteParagraphs?.length) {
+            // Legacy: concatenate paragraphs into one rich text
+            setBriefNotesContent(
+              resource.noteParagraphs
+                .sort((a: any, b: any) => a.order - b.order)
+                .map((p: any) => (p.heading ? `<h3>${p.heading}</h3>` : '') + (p.content || ''))
+                .join('')
+            );
+          } else {
+            setBriefNotesContent('');
+          }
           break;
         case 'FLASH_CARDS':
           setFlashCards(
@@ -387,13 +404,20 @@ export default function EditResourcePage() {
           break;
 
         case 'NOTES':
-        case 'BRIEF_NOTES':
           if (noteParagraphs.length === 0 || noteParagraphs.some(p => !p.content.trim())) {
             setError('At least one paragraph with content is required');
             setLoading(false);
             return;
           }
           payload.noteParagraphs = noteParagraphs.filter(p => p.content.trim());
+          break;
+        case 'BRIEF_NOTES':
+          if (!briefNotesContent.trim()) {
+            setError('Content is required for Brief Notes');
+            setLoading(false);
+            return;
+          }
+          payload.briefNotesContent = briefNotesContent.trim();
           break;
 
         case 'FLASH_CARDS':
@@ -517,10 +541,10 @@ export default function EditResourcePage() {
                 </div>
               )}
 
-              {/* NOTES and BRIEF_NOTES */}
-              {(resourceType === 'NOTES' || resourceType === 'BRIEF_NOTES') && (
+              {/* NOTES: multiple paragraphs */}
+              {resourceType === 'NOTES' && (
                 <div className="space-y-4">
-                  <Label>{resourceType === 'BRIEF_NOTES' ? 'Brief Note Sections *' : 'Note Paragraphs *'}</Label>
+                  <Label>Note Paragraphs *</Label>
                   {noteParagraphs.map((para, index) => {
                     const isCollapsed = collapsedParagraphs.has(index);
                     return (
@@ -589,6 +613,22 @@ export default function EditResourcePage() {
                     <Plus className="mr-2 h-4 w-4" />
                     Add Paragraph
                   </Button>
+                </div>
+              )}
+
+              {/* BRIEF_NOTES: single rich text (blog-style) */}
+              {resourceType === 'BRIEF_NOTES' && (
+                <div className="space-y-4">
+                  <Label>Content *</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Write your brief notes in one rich text block. Format with headings, lists, and tables as needed.
+                  </p>
+                  <RichTextEditor
+                    value={briefNotesContent}
+                    onChange={setBriefNotesContent}
+                    placeholder="Enter your brief notes content..."
+                    disabled={loading}
+                  />
                 </div>
               )}
 
