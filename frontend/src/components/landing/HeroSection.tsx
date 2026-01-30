@@ -75,7 +75,7 @@ export function HeroSection() {
       <div className="relative z-10 mx-auto flex min-h-[70vh] max-w-7xl flex-col items-center justify-center gap-4 px-3 py-12 sm:min-h-[75vh] sm:gap-5 sm:px-4 sm:py-16 md:flex-row md:flex-nowrap md:gap-6 md:px-6 lg:min-h-[80vh] lg:gap-8 lg:px-8 lg:py-24 xl:gap-12 xl:py-28">
         {/* Left: Pathriji image — always first in row */}
         <HeroImageFrame
-          src="/Asserts/Pathriji.jpeg"
+          src="/assets/Pathriji.jpeg"
           alt="Pathriji"
           delay={0.1}
           x={-24}
@@ -112,7 +112,7 @@ export function HeroSection() {
 
         {/* Right: Ramu_Master image — always third in row */}
         <HeroImageFrame
-          src="/Asserts/Ramu_Master.jpg"
+          src="/assets/Ramu_Master.jpg"
           alt="Instructor"
           delay={0.15}
           x={24}

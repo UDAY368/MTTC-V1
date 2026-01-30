@@ -6,7 +6,7 @@ const nextConfig = {
     // Trailing slash is normalized in apiBaseUrl.ts.
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
   },
-  // Ensure static assets in public/ are served correctly (e.g. /Asserts/*)
+  // Static assets in public/ served at root (e.g. public/assets/* → /assets/*)
   images: {
     unoptimized: true,
   },

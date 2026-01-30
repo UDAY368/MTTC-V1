@@ -105,7 +105,7 @@ export function InstructorSection({ instructorName, aboutInstructor, compact }: 
             >
               <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/5 pointer-events-none" aria-hidden />
               <Image
-                src="/Asserts/Ramu_Master_3.png"
+                src="/assets/Ramu_Master_3.png"
                 alt={name}
                 className="h-full w-full object-cover"
                 style={{ objectPosition: 'center 22%', transform: 'scale(1.4)' }}

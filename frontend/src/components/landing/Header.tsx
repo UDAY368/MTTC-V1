@@ -29,7 +29,7 @@ export function Header() {
         >
           <div className="relative h-10 w-10 overflow-hidden rounded-lg shrink-0 sm:h-12 sm:w-12 md:h-14 md:w-14">
             <Image
-              src="/Asserts/LOGO.png"
+              src="/assets/LOGO.png"
               alt="Dhayana Dharma Ashramam"
               className="h-full w-full object-contain"
               width={56}
