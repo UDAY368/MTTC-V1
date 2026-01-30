@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { CalendarDays, UserRound, BookOpen } from 'lucide-react';
+import courseImage from '@/assets/Course_Image.png';
 
 interface AboutCourseHeroProps {
   name: string;
@@ -95,7 +96,7 @@ export function AboutCourseHero({
             />
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-card/90 shadow-2xl shadow-black/30 ring-2 ring-primary/20 ring-offset-2 ring-offset-background h-full w-full">
               <Image
-                src="/assets/Course_Image.png"
+                src={courseImage}
                 alt=""
                 className="h-full w-full object-cover"
                 width={384}

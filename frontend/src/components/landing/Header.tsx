@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/components/theme/ThemeProvider';
+import logoImage from '@/assets/LOGO.png';
 
 /**
  * Landing Header — sticky, minimal.
@@ -29,7 +30,7 @@ export function Header() {
         >
           <div className="relative h-10 w-10 overflow-hidden rounded-lg shrink-0 sm:h-12 sm:w-12 md:h-14 md:w-14">
             <Image
-              src="/assets/LOGO.png"
+              src={logoImage}
               alt="Dhayana Dharma Ashramam"
               className="h-full w-full object-contain"
               width={56}
