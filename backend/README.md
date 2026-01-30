@@ -37,7 +37,7 @@ Update the following in `.env`:
 - `DB_PASSWORD`: Database password
 - `JWT_SECRET`: A secure random string for JWT signing
 - `PORT`: Server port (default: 5000)
-- `FRONTEND_URL`: Frontend URL for CORS
+- `FRONTEND_URL`: Frontend URL for CORS (e.g. `https://meditationteachertraining.vercel.app` for production, or `http://localhost:3000` for local dev; comma-separated for multiple origins)
 
 **Option 2: Use Direct DATABASE_URL**
 Alternatively, you can set `DATABASE_URL` directly:
@@ -140,7 +140,7 @@ In Railway → your **backend** service → **Variables**, add:
 | Variable | Value | Notes |
 |---------|--------|--------|
 | `DATABASE_URL` | `postgresql://postgres:YOUR_PASSWORD@postgres.railway.internal:5432/railway` | Use the **internal** URL from your Postgres service (Variables tab); copy from the linked Postgres service. |
-| `FRONTEND_URL` | `https://your-app.vercel.app` or `http://localhost:3000` | Comma-separated for multiple origins. |
+| `FRONTEND_URL` | `https://meditationteachertraining.vercel.app` (production) or `http://localhost:3000` (local) | Comma-separated for multiple origins. |
 | `JWT_SECRET` | A long random string | e.g. `openssl rand -hex 32` |
 
 Optional (Railway often sets these when you link Postgres): `PGDATABASE`, `PGHOST`, `PGPASSWORD`, `PGPORT`, `PGUSER`. The app uses `DATABASE_URL`; the others are for reference.
