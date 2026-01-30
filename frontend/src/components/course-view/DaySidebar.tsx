@@ -59,6 +59,10 @@ function CollapsedDayButton({
     };
   }, [showTooltip, updateRect]);
 
+  // Avoid duplicate "Day N": strip leading "Day N : " or "Day N" from title
+  const titleOnly = day.title.replace(/^Day\s*\d+\s*(:\s*)?/i, '').trim() || day.title;
+  const tooltipLabel = `Day ${dayNumber} : ${titleOnly}`;
+
   const tooltipEl =
     typeof document !== 'undefined' && showTooltip
       ? createPortal(
@@ -67,7 +71,7 @@ function CollapsedDayButton({
             className="fixed z-[9999] max-w-[220px] -translate-y-1/2 rounded-xl border border-border/60 bg-card px-3 py-2 text-sm font-medium text-foreground shadow-xl ring-1 ring-black/5"
             style={{ left: tooltipRect.x, top: tooltipRect.y }}
           >
-            <span className="line-clamp-2 block">{day.title}</span>
+            <span className="line-clamp-2 block">{tooltipLabel}</span>
           </div>,
           document.body
         )
@@ -91,7 +95,8 @@ function CollapsedDayButton({
               ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30'
               : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
           }`}
-          aria-label={day.title}
+          aria-label={tooltipLabel}
+          title={tooltipLabel}
           aria-current={isActive ? 'true' : undefined}
         >
           {dayNumber}
@@ -177,6 +182,8 @@ export function DaySidebar({
               );
             }
 
+            const titleOnly = day.title.replace(/^Day\s*\d+\s*(:\s*)?/i, '').trim() || day.title;
+            const dayTooltipLabel = `Day ${dayNumber} : ${titleOnly}`;
             return (
               <motion.li
                 key={day.id}
@@ -186,6 +193,8 @@ export function DaySidebar({
                 <button
                   type="button"
                   onClick={() => onSelectDay(day.id)}
+                  title={dayTooltipLabel}
+                  aria-label={dayTooltipLabel}
                   className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
                     isActive
                       ? 'bg-primary/15 font-semibold text-foreground ring-1 ring-primary/20'
@@ -249,6 +258,10 @@ function MobileDayButton({
     };
   }, [showTooltip, updateRect]);
 
+  // Avoid duplicate "Day N": strip leading "Day N : " or "Day N" from title
+  const titleOnly = day.title.replace(/^Day\s*\d+\s*(:\s*)?/i, '').trim() || day.title;
+  const tooltipLabel = `Day ${dayNumber} : ${titleOnly}`;
+
   const tooltipEl =
     typeof document !== 'undefined' && showTooltip
       ? createPortal(
@@ -257,7 +270,7 @@ function MobileDayButton({
             className="fixed z-[9999] max-w-[220px] -translate-x-1/2 -translate-y-full rounded-xl border border-border/60 bg-card px-3 py-2 text-sm font-medium text-foreground shadow-xl ring-1 ring-black/5"
             style={{ left: tooltipRect.x, top: tooltipRect.y }}
           >
-            <span className="line-clamp-2 block">{day.title}</span>
+            <span className="line-clamp-2 block">{tooltipLabel}</span>
           </div>,
           document.body
         )
@@ -281,8 +294,8 @@ function MobileDayButton({
             ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30'
             : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
         }`}
-        aria-label={day.title}
-        title={day.title}
+        aria-label={tooltipLabel}
+        title={tooltipLabel}
         aria-current={isActive ? 'true' : undefined}
       >
         {dayNumber}

@@ -27,7 +27,13 @@ export interface LearnResource {
 export interface LearnDayQuiz {
   id: string;
   order: number;
-  quiz: { id: string; title: string; uniqueUrl: string };
+  quiz: {
+    id: string;
+    title: string;
+    uniqueUrl: string;
+    durationMinutes?: number;
+    questionCount?: number;
+  };
 }
 
 export interface LearnData {

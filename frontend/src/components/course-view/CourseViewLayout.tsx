@@ -106,6 +106,7 @@ export function CourseViewLayout({ courseId, courseName, days }: CourseViewLayou
             selectedItem={selectedItem}
             currentItems={currentItems}
             onSelectItem={selectItem}
+            selectedDayNumber={selectedDay ? daysWithItems.findIndex((d) => d.id === selectedDay.id) + 1 : undefined}
           />
         </div>
       </main>

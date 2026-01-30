@@ -32,6 +32,7 @@ export default function EditQuizPage() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [totalQuestionsInput, setTotalQuestionsInput] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [isActive, setIsActive] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -62,6 +63,7 @@ export default function EditQuizPage() {
       const quiz = response.data.data;
       setTitle(quiz.title);
       setDescription(quiz.description || '');
+      setTotalQuestionsInput(String(quiz.totalQuestions ?? 0));
       setDurationMinutes(quiz.durationMinutes);
       setIsActive(quiz.isActive);
 
@@ -190,6 +192,7 @@ export default function EditQuizPage() {
       await api.put(`/quizzes/${quizId}`, {
         title,
         description,
+        totalQuestions: Math.max(0, parseInt(totalQuestionsInput, 10) || 0),
         durationMinutes,
         isActive,
       });
@@ -290,6 +293,24 @@ export default function EditQuizPage() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="totalQuestions">Total Number of Questions</Label>
+                <Input
+                  id="totalQuestions"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={totalQuestionsInput}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '' || /^\d+$/.test(v)) setTotalQuestionsInput(v);
+                  }}
+                  placeholder="0"
+                  disabled={loading}
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="duration">Duration (minutes) *</Label>
                 <Input
                   id="duration"
@@ -324,23 +345,10 @@ export default function EditQuizPage() {
         >
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Questions</CardTitle>
-                  <CardDescription>
-                    Manage quiz questions
-                  </CardDescription>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addQuestion}
-                  disabled={loading}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Question
-                </Button>
-              </div>
+              <CardTitle>Questions</CardTitle>
+              <CardDescription>
+                Manage quiz questions
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {questions.map((question, qIndex) => {
@@ -509,9 +517,21 @@ export default function EditQuizPage() {
 
               {questions.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>No questions yet. Click "Add Question" to get started.</p>
+                  <p>No questions yet. Click "Add Question" below to get started.</p>
                 </div>
               )}
+
+              <div className="flex justify-start border-t border-border/60 pt-4 mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addQuestion}
+                  disabled={loading}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Question
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

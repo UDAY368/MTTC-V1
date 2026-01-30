@@ -111,7 +111,15 @@ export const getPublicCourseLearn = async (req, res, next) => {
               select: {
                 id: true,
                 order: true,
-                quiz: { select: { id: true, title: true, uniqueUrl: true } },
+                quiz: {
+                  select: {
+                    id: true,
+                    title: true,
+                    uniqueUrl: true,
+                    durationMinutes: true,
+                    totalQuestions: true,
+                  },
+                },
               },
             },
           },
@@ -121,7 +129,25 @@ export const getPublicCourseLearn = async (req, res, next) => {
     if (!course) {
       return res.status(404).json({ success: false, message: 'Course not found' });
     }
-    res.json({ success: true, data: course });
+    // Shape quiz for frontend: add questionCount and durationMinutes at top level
+    const data = {
+      ...course,
+      days: course.days.map((day) => ({
+        ...day,
+        dayQuizzes: day.dayQuizzes.map((dq) => ({
+          id: dq.id,
+          order: dq.order,
+          quiz: {
+            id: dq.quiz.id,
+            title: dq.quiz.title,
+            uniqueUrl: dq.quiz.uniqueUrl,
+            durationMinutes: dq.quiz.durationMinutes ?? 0,
+            questionCount: dq.quiz.totalQuestions ?? 0,
+          },
+        })),
+      })),
+    };
+    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }

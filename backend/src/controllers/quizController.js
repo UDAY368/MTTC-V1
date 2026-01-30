@@ -101,7 +101,7 @@ export const getQuizById = async (req, res, next) => {
  */
 export const createQuiz = async (req, res, next) => {
   try {
-    const { courseId, title, description, durationMinutes } = req.body;
+    const { courseId, title, description, totalQuestions, durationMinutes } = req.body;
 
     // Validation
     if (!courseId || !title || !durationMinutes) {
@@ -117,6 +117,8 @@ export const createQuiz = async (req, res, next) => {
         message: 'Duration must be greater than 0',
       });
     }
+
+    const totalQuestionsVal = totalQuestions != null ? Math.max(0, parseInt(totalQuestions, 10) || 0) : 0;
 
     // Verify course exists
     const course = await prisma.course.findUnique({
@@ -138,6 +140,7 @@ export const createQuiz = async (req, res, next) => {
         courseId,
         title: title.trim(),
         description: description?.trim() || null,
+        totalQuestions: totalQuestionsVal,
         durationMinutes: parseInt(durationMinutes),
         uniqueUrl,
       },
@@ -168,7 +171,7 @@ export const createQuiz = async (req, res, next) => {
 export const updateQuiz = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, durationMinutes, isActive } = req.body;
+    const { title, description, totalQuestions, durationMinutes, isActive } = req.body;
 
     const updateData = {};
 
@@ -178,6 +181,10 @@ export const updateQuiz = async (req, res, next) => {
 
     if (description !== undefined) {
       updateData.description = description?.trim() || null;
+    }
+
+    if (totalQuestions !== undefined) {
+      updateData.totalQuestions = Math.max(0, parseInt(totalQuestions, 10) || 0);
     }
 
     if (durationMinutes !== undefined) {

@@ -426,7 +426,26 @@ export default function QuizPage() {
             className="text-center space-y-4"
           >
             <h1 className="text-3xl font-light">{quiz?.course.name}</h1>
-            <h2 className="text-2xl font-light text-muted-foreground">{quiz?.title}</h2>
+          </motion.div>
+
+          {/* Back button + Quiz title row — below course name; Back uses router.back() to return to exact previous page */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-4"
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary shadow-md"
+              aria-label={selectedLanguage === 'en' ? 'Back to previous page' : 'మునుపటి పేజీకి తిరిగి వెళ్ళండి'}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {selectedLanguage === 'en' ? 'Back' : 'వెనుక'}
+            </Button>
+            <h2 className="flex-1 text-center text-2xl font-light text-muted-foreground">{quiz?.title}</h2>
+            <div className="w-[81px]" aria-hidden />
           </motion.div>
 
           {/* Score Card */}
@@ -621,8 +640,8 @@ export default function QuizPage() {
                 setCurrentQuestionIndex(0);
                 setMarkedForReview(new Set());
               }}
-              variant="outline"
               size="lg"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
             >
               <RotateCcw className="mr-2 h-4 w-4" />
               {selectedLanguage === 'en' ? 'Retake Quiz' : 'క్విజ్ మళ్ళీ తీసుకోండి'}

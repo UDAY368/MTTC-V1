@@ -19,6 +19,7 @@ interface ContentViewerProps {
   selectedItem: DayItem | null;
   currentItems: DayItem[];
   onSelectItem: (item: DayItem | null) => void;
+  selectedDayNumber?: number;
 }
 
 function ResourceTypeLabel(type: string): string {
@@ -35,7 +36,15 @@ function ResourceTypeLabel(type: string): string {
   return map[type] ?? type;
 }
 
-function ResourceContent({ item, currentItems = [] }: { item: DayItem; currentItems?: DayItem[] }) {
+function ResourceContent({
+  item,
+  currentItems = [],
+  selectedDayNumber,
+}: {
+  item: DayItem;
+  currentItems?: DayItem[];
+  selectedDayNumber?: number;
+}) {
   const [collapsedNotes, setCollapsedNotes] = useState<Set<string>>(new Set());
   const [collapsedShort, setCollapsedShort] = useState<Set<string>>(new Set());
   const [collapsedRec, setCollapsedRec] = useState<Set<string>>(new Set());
@@ -73,6 +82,7 @@ function ResourceContent({ item, currentItems = [] }: { item: DayItem; currentIt
   if (item.type === 'dayQuiz') {
     const quizItems = currentItems.filter((i): i is typeof item => i.type === 'dayQuiz');
     const quizzes = quizItems.length > 0 ? quizItems : [item];
+    const quizUrl = (quizItem: typeof item) => `/quiz/${quizItem.dayQuiz.quiz.uniqueUrl}`;
 
     return (
       <div className="space-y-4">
@@ -90,25 +100,57 @@ function ResourceContent({ item, currentItems = [] }: { item: DayItem; currentIt
                 transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.06 }}
                 className="group"
               >
-                <Card className="h-full overflow-hidden border-border/60 bg-card shadow-md transition-all duration-300 hover:shadow-lg hover:border-primary/20 dark:bg-card/95">
-                  <CardContent className="flex flex-col gap-4 p-5 sm:p-6">
-                    <div className="flex flex-1 flex-col gap-2">
-                      <h3 className="text-sm font-semibold leading-tight text-foreground sm:text-base md:text-lg">
+                <Card className="relative h-full overflow-hidden border-border/60 bg-card shadow-md transition-all duration-300 hover:shadow-lg hover:border-primary/20 dark:bg-card/95">
+                  {selectedDayNumber != null && (
+                    <span
+                      className="absolute top-2.5 right-2.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm ring-1 ring-primary/30 sm:top-3 sm:right-3 sm:px-2.5 sm:py-1 sm:text-xs lg:top-3.5 lg:right-3.5 lg:px-3 lg:py-1.5 lg:text-sm"
+                      aria-label={`Day ${selectedDayNumber}`}
+                    >
+                      Day {selectedDayNumber}
+                    </span>
+                  )}
+                  <CardContent className="flex flex-col gap-2.5 p-4 sm:gap-3 sm:p-5 lg:gap-4 lg:p-6">
+                    <div className="flex flex-1 flex-col gap-1 sm:gap-1.5 lg:gap-2">
+                      <h3 className="text-sm font-semibold leading-tight text-foreground pr-14 sm:text-base sm:pr-16 md:text-lg lg:text-xl lg:pr-20">
                         {q.title}
                       </h3>
-                      <p className="text-xs text-muted-foreground sm:text-sm">Quiz for this day.</p>
+                      <p className="text-xs text-muted-foreground sm:text-sm lg:text-base">Quiz for this day.</p>
+                      {((q.questionCount ?? 0) > 0 || (q.durationMinutes ?? 0) > 0) && (
+                        <div className="rounded-lg border border-border/50 bg-muted/30 px-2.5 py-2 ring-1 ring-black/[0.03] dark:ring-white/[0.06] sm:rounded-xl sm:px-3 sm:py-2.5 lg:px-4 lg:py-3">
+                          <div className="flex flex-col gap-0.5 sm:gap-1 lg:gap-1.5">
+                            {(q.questionCount ?? 0) > 0 && (
+                              <div className="flex items-baseline gap-1 sm:gap-1.5 lg:gap-2">
+                                <span className="text-base font-bold tabular-nums text-primary sm:text-lg md:text-xl lg:text-2xl">
+                                  {q.questionCount}
+                                </span>
+                                <span className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
+                                  {(q.questionCount ?? 0) === 1 ? 'Question' : 'Questions'}
+                                </span>
+                              </div>
+                            )}
+                            {(q.durationMinutes ?? 0) > 0 && (
+                              <div className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
+                                {q.durationMinutes} Min
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <Link
-                      href={`/quiz/${q.uniqueUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:text-sm"
-                    >
-                      Open Quiz
-                      <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </Link>
+                    <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-2.5">
+                      <Link
+                        href={quizUrl(quizItem)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
+                      >
+                        Open Quiz
+                      </Link>
+                      <Link
+                        href={quizUrl(quizItem)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm transition-all duration-200 hover:bg-muted/60 hover:border-primary/30 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
+                      >
+                        Retake Quiz
+                      </Link>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -440,7 +482,13 @@ function ResourceContent({ item, currentItems = [] }: { item: DayItem; currentIt
 /**
  * Center panel — selected resource content; clear layout that does not overlap sidebars; premium look.
  */
-export function ContentViewer({ courseName, selectedItem, currentItems, onSelectItem }: ContentViewerProps) {
+export function ContentViewer({
+  courseName,
+  selectedItem,
+  currentItems,
+  onSelectItem,
+  selectedDayNumber,
+}: ContentViewerProps) {
   const idx = selectedItem ? currentItems.findIndex((i) => i.id === selectedItem.id && i.type === selectedItem.type) : -1;
   const prevItem = idx > 0 ? currentItems[idx - 1] : null;
   const nextItem = idx >= 0 && idx < currentItems.length - 1 ? currentItems[idx + 1] : null;
@@ -476,7 +524,11 @@ export function ContentViewer({ courseName, selectedItem, currentItems, onSelect
               transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
               className="mx-auto min-w-0 w-full max-w-3xl"
             >
-              <ResourceContent item={selectedItem} currentItems={currentItems} />
+              <ResourceContent
+                item={selectedItem}
+                currentItems={currentItems}
+                selectedDayNumber={selectedDayNumber}
+              />
             </motion.div>
           ) : (
             <motion.p

@@ -69,6 +69,7 @@ model Quiz {
   courseId        String
   title           String   // e.g., "Day 1 Quiz"
   description     String?
+  totalQuestions  Int      @default(0) // Total number of questions (for display; set in admin)
   durationMinutes Int      // Quiz duration in minutes
   uniqueUrl       String   @unique // Public URL slug (e.g., "meditation-day-1-quiz-abc123")
   isActive        Boolean  @default(true)
