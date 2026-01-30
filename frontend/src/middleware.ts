@@ -3,11 +3,14 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('admin_token');
-  const isLoginPage = request.nextUrl.pathname === '/login';
-  const isQuizPage = request.nextUrl.pathname.startsWith('/quiz/');
-  const isHomePage = request.nextUrl.pathname === '/home';
-  const isCoursePage = request.nextUrl.pathname.startsWith('/course/');
-  const isPublicPage = isLoginPage || isQuizPage || isHomePage || isCoursePage;
+  const pathname = request.nextUrl.pathname;
+  const isRoot = pathname === '/';
+  const isLoginPage = pathname === '/login';
+  const isQuizPage = pathname.startsWith('/quiz/');
+  const isHomePage = pathname === '/home';
+  const isCoursePage = pathname.startsWith('/course/');
+  // Root and /home are the public landing; /login is admin-only (reached only by typing /login or from protected route)
+  const isPublicPage = isRoot || isLoginPage || isQuizPage || isHomePage || isCoursePage;
 
   // Allow public quiz pages
   if (isQuizPage) {
