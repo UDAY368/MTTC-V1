@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import ramuMaster3Image from '@/assets/Ramu_Master_3.png';
+import ramuMasterImage from '@/assets/Ramu_Master_New.png';
 
 interface InstructorSectionProps {
   instructorName?: string;
@@ -106,7 +106,7 @@ export function InstructorSection({ instructorName, aboutInstructor, compact }: 
             >
               <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/5 pointer-events-none" aria-hidden />
               <Image
-                src={ramuMaster3Image}
+                src={ramuMasterImage}
                 alt={name}
                 className="h-full w-full object-cover"
                 style={{ objectPosition: 'center 22%', transform: 'scale(1.4)' }}
