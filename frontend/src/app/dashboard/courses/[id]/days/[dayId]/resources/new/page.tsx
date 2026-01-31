@@ -648,7 +648,7 @@ export default function NewResourcePage() {
       >
         <Card className="max-w-3xl">
           <CardHeader>
-            <CardTitle>Create {resourceType === 'VIDEO' ? 'Video' : resourceType === 'NOTES' ? 'Key Points' : resourceType === 'BRIEF_NOTES' ? 'Brief Notes' : resourceType === 'FLASH_CARDS' ? 'Flash Cards' : resourceType === 'SHORT_QUESTIONS' ? 'Short Questions' : resourceType === 'ASSIGNMENT' ? 'Assignment' : resourceType === 'GLOSSARY' ? 'Glossary' : resourceType === 'RECOMMENDATION' ? 'Recommendation' : 'Resource'} Resource</CardTitle>
+            <CardTitle>Create {resourceType === 'VIDEO' ? 'Video' : resourceType === 'NOTES' ? 'Key Points' : resourceType === 'BRIEF_NOTES' ? 'Brief Notes' : resourceType === 'SHORT_QUESTIONS' ? 'Short Questions' : resourceType === 'ASSIGNMENT' ? 'Assignment' : resourceType === 'GLOSSARY' ? 'Glossary' : resourceType === 'RECOMMENDATION' ? 'Recommendation' : 'Resource'} Resource</CardTitle>
             <CardDescription>
               Add a new {(resourceType === 'NOTES' ? 'key points' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType.toLowerCase().replace(/_/g, ' '))} resource to this day
             </CardDescription>
@@ -1229,7 +1229,7 @@ export default function NewResourcePage() {
                 transition={{ delay: 0.4 }}
                 className="text-muted-foreground"
               >
-                Your {resourceType === 'VIDEO' ? 'video' : resourceType === 'NOTES' ? 'key points' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType === 'FLASH_CARDS' ? 'flash cards' : resourceType === 'SHORT_QUESTIONS' ? 'short questions' : resourceType === 'ASSIGNMENT' ? 'assignment' : resourceType === 'GLOSSARY' ? 'glossary' : resourceType === 'RECOMMENDATION' ? 'recommendation' : 'resource'} resource has been successfully created and saved.
+                Your {resourceType === 'VIDEO' ? 'video' : resourceType === 'NOTES' ? 'key points' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType === 'SHORT_QUESTIONS' ? 'short questions' : resourceType === 'ASSIGNMENT' ? 'assignment' : resourceType === 'GLOSSARY' ? 'glossary' : resourceType === 'RECOMMENDATION' ? 'recommendation' : 'resource'} resource has been successfully created and saved.
               </motion.p>
               <motion.div
                 initial={{ opacity: 0 }}
