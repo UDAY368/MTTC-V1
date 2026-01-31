@@ -13,6 +13,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, BookOpen, Loader2, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { QuizResourceAttachView } from '@/components/quiz/QuizResourceAttachView';
+import { FlashCardDeckAttachView } from '@/components/flash-cards/FlashCardDeckAttachView';
 
 type ResourceType = 'VIDEO' | 'NOTES' | 'BRIEF_NOTES' | 'FLASH_CARDS' | 'SHORT_QUESTIONS' | 'ASSIGNMENT' | 'GLOSSARY' | 'RECOMMENDATION' | 'QUIZ';
 
@@ -34,6 +35,13 @@ export default function NewResourcePage() {
   const [quizResourceLoading, setQuizResourceLoading] = useState(resourceType === 'QUIZ');
   const [creatingQuizResource, setCreatingQuizResource] = useState(false);
   const [quizResourceCreatedSuccess, setQuizResourceCreatedSuccess] = useState(false);
+
+  // FLASH_CARDS: ensure one Flash Cards resource exists, then show deck attach page
+  const [flashCardResourceReady, setFlashCardResourceReady] = useState(false);
+  const [flashCardResourceError, setFlashCardResourceError] = useState('');
+  const [flashCardResourceLoading, setFlashCardResourceLoading] = useState(resourceType === 'FLASH_CARDS');
+  const [creatingFlashCardResource, setCreatingFlashCardResource] = useState(false);
+  const [flashCardResourceCreatedSuccess, setFlashCardResourceCreatedSuccess] = useState(false);
 
   // Common fields
   const [title, setTitle] = useState('');
@@ -322,6 +330,53 @@ export default function NewResourcePage() {
     return () => { cancelled = true; };
   }, [resourceType, dayId]);
 
+  // FLASH_CARDS: ensure one Flash Cards resource exists for this day
+  useEffect(() => {
+    if (resourceType !== 'FLASH_CARDS') return;
+    let cancelled = false;
+    (async () => {
+      setFlashCardResourceLoading(true);
+      setFlashCardResourceError('');
+      try {
+        const res = await api.get(`/resources?dayId=${dayId}`);
+        const resources = res.data?.data ?? [];
+        const hasFlashCards = resources.some((r: { type: string }) => r.type === 'FLASH_CARDS');
+        if (hasFlashCards) {
+          if (!cancelled) setFlashCardResourceReady(true);
+          return;
+        }
+        await api.post('/resources', { dayId, type: 'FLASH_CARDS' });
+        if (!cancelled) setFlashCardResourceReady(true);
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { message?: string } } };
+        if (!cancelled) {
+          setFlashCardResourceError(e.response?.data?.message || 'Could not create Flash Cards resource.');
+        }
+      } finally {
+        if (!cancelled) setFlashCardResourceLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [resourceType, dayId]);
+
+  const createFlashCardResource = async () => {
+    setCreatingFlashCardResource(true);
+    setFlashCardResourceError('');
+    setFlashCardResourceCreatedSuccess(false);
+    try {
+      await api.post('/resources', { dayId, type: 'FLASH_CARDS' });
+      setFlashCardResourceReady(true);
+      setFlashCardResourceError('');
+      setFlashCardResourceCreatedSuccess(true);
+      setTimeout(() => setFlashCardResourceCreatedSuccess(false), 4000);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      setFlashCardResourceError(e.response?.data?.message || 'Could not create Flash Cards resource. Try again.');
+    } finally {
+      setCreatingFlashCardResource(false);
+    }
+  };
+
   const createQuizResource = async () => {
     setCreatingQuizResource(true);
     setQuizResourceError('');
@@ -489,6 +544,71 @@ export default function NewResourcePage() {
                         disabled={creatingQuizResource}
                       >
                         {creatingQuizResource ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating…
+                          </>
+                        ) : (
+                          'Create Resource'
+                        )}
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link href={`/dashboard/courses/${courseId}/days/${dayId}`}>Back to day</Link>
+                      </Button>
+                    </div>
+                  }
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // FLASH_CARDS: full-page deck attach UI (like Quiz Resource)
+  if (resourceType === 'FLASH_CARDS') {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" asChild className="mb-4">
+          <Link href={`/dashboard/courses/${courseId}/days/${dayId}`}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to day
+          </Link>
+        </Button>
+        <Card className="max-w-3xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Flash Card Resource
+            </CardTitle>
+            <CardDescription>
+              Add and manage flash card decks for this day. Create a deck with question/answer cards; it will be linked to this day.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {flashCardResourceLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                {flashCardResourceCreatedSuccess && (
+                  <div className="mb-6 p-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Flash Card resource created. You can add decks below.</p>
+                  </div>
+                )}
+                <FlashCardDeckAttachView
+                  dayId={dayId}
+                  courseId={courseId}
+                  children={
+                    <div className="border-t pt-4 mt-6 flex justify-between items-center">
+                      <Button
+                        type="button"
+                        onClick={createFlashCardResource}
+                        disabled={creatingFlashCardResource}
+                      >
+                        {creatingFlashCardResource ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Creating…

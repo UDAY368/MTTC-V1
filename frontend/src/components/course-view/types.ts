@@ -1,9 +1,22 @@
+export interface LearnDayFlashCardDeck {
+  id: string;
+  order: number;
+  deck: {
+    id: string;
+    title: string;
+    uniqueUrl: string;
+    description?: string | null;
+    cards: { id: string; question: string; answer: string; order: number }[];
+  };
+}
+
 export interface LearnDay {
   id: string;
   title: string;
   order: number;
   resources: LearnResource[];
   dayQuizzes: LearnDayQuiz[];
+  dayFlashCardDecks?: LearnDayFlashCardDeck[];
 }
 
 export interface LearnResource {

@@ -44,3 +44,24 @@ export async function generateUniqueQuizUrl(prisma, prefix = 'quiz') {
 
   return uniqueUrl;
 }
+
+/**
+ * Generates a unique URL for a FlashCardDeck (for public full-screen viewer)
+ */
+export async function generateUniqueFlashDeckUrl(prisma, prefix = 'flash') {
+  let uniqueUrl;
+  let isUnique = false;
+  let attempts = 0;
+  const maxAttempts = 10;
+
+  while (!isUnique && attempts < maxAttempts) {
+    uniqueUrl = generateUniqueUrl(prefix);
+    const existing = await prisma.flashCardDeck.findUnique({
+      where: { uniqueUrl },
+    });
+    if (!existing) isUnique = true;
+    else attempts++;
+  }
+  if (!isUnique) throw new Error('Failed to generate unique flash deck URL');
+  return uniqueUrl;
+}

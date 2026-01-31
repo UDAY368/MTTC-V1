@@ -25,10 +25,11 @@ model Course {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  quizzes     Quiz[]
-  days        Day[]
-  highlights  CourseHighlight[]
-  syllabus    CourseModule[]
+  quizzes        Quiz[]
+  flashCardDecks FlashCardDeck[]
+  days           Day[]
+  highlights     CourseHighlight[]
+  syllabus       CourseModule[]
 
   @@map("courses")
 }
@@ -209,9 +210,10 @@ model Day {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  resources   Resource[]
-  dayQuizzes  DayQuiz[] // Many-to-many with Quizzes
+  course             Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  resources          Resource[]
+  dayQuizzes         DayQuiz[]          // Many-to-many with Quizzes
+  dayFlashCardDecks  DayFlashCardDeck[] // Many-to-many with FlashCardDecks
 
   @@index([courseId])
   @@index([courseId, order])
@@ -405,4 +407,59 @@ model DayQuiz {
   @@index([dayId, order])
   @@index([quizId])
   @@map("day_quizzes")
+}
+
+// FlashCardDeck: reusable deck of flip cards (like Quiz)
+// Attached to days via DayFlashCardDeck
+model FlashCardDeck {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String   // e.g., "Day 1 Key Terms"
+  description String?
+  uniqueUrl   String   @unique // Public URL for full-screen viewer (e.g., "flash-abc123")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course             Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  cards              FlashCardDeckCard[]
+  dayFlashCardDecks  DayFlashCardDeck[]
+
+  @@index([courseId])
+  @@index([uniqueUrl])
+  @@map("flash_card_decks")
+}
+
+model FlashCardDeckCard {
+  id        String   @id @default(cuid())
+  deckId    String
+  question  String   // Front of card
+  answer    String   // Back of card
+  order     Int      // Order within the deck
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deck FlashCardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([deckId])
+  @@index([deckId, order])
+  @@map("flash_card_deck_cards")
+}
+
+model DayFlashCardDeck {
+  id       String   @id @default(cuid())
+  dayId    String
+  deckId   String
+  order    Int      // Order within the day
+  isVisible Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  day  Day            @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  deck FlashCardDeck  @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@unique([dayId, deckId])
+  @@index([dayId])
+  @@index([dayId, order])
+  @@index([deckId])
+  @@map("day_flash_card_decks")
 }

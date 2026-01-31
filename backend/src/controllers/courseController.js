@@ -122,6 +122,23 @@ export const getPublicCourseLearn = async (req, res, next) => {
                 },
               },
             },
+            dayFlashCardDecks: {
+              where: { isVisible: true },
+              orderBy: { order: 'asc' },
+              select: {
+                id: true,
+                order: true,
+                deck: {
+                  select: {
+                    id: true,
+                    title: true,
+                    uniqueUrl: true,
+                    description: true,
+                    cards: { orderBy: { order: 'asc' } },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -129,7 +146,7 @@ export const getPublicCourseLearn = async (req, res, next) => {
     if (!course) {
       return res.status(404).json({ success: false, message: 'Course not found' });
     }
-    // Shape quiz for frontend: add questionCount and durationMinutes at top level
+    // Shape quiz and flash decks for frontend
     const data = {
       ...course,
       days: course.days.map((day) => ({
@@ -143,6 +160,17 @@ export const getPublicCourseLearn = async (req, res, next) => {
             uniqueUrl: dq.quiz.uniqueUrl,
             durationMinutes: dq.quiz.durationMinutes ?? 0,
             questionCount: dq.quiz.totalQuestions ?? 0,
+          },
+        })),
+        dayFlashCardDecks: day.dayFlashCardDecks.map((dfd) => ({
+          id: dfd.id,
+          order: dfd.order,
+          deck: {
+            id: dfd.deck.id,
+            title: dfd.deck.title,
+            uniqueUrl: dfd.deck.uniqueUrl,
+            description: dfd.deck.description ?? null,
+            cards: dfd.deck.cards,
           },
         })),
       })),

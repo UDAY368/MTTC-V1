@@ -11,6 +11,7 @@
     "postinstall": "npx prisma generate",
     "prisma:generate": "node scripts/prisma-with-env.js generate",
     "prisma:migrate": "node scripts/prisma-with-env.js migrate dev",
+    "prisma:migrate:add-flash-decks": "node scripts/prisma-with-env.js migrate dev --name add_flash_card_decks",
     "prisma:studio": "node scripts/prisma-with-env.js studio",
     "prisma:push": "node scripts/prisma-with-env.js db push",
     "prisma:migrate:deploy": "node scripts/prisma-with-env.js migrate deploy",

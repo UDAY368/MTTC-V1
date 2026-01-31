@@ -235,11 +235,18 @@ export const createResource = async (req, res, next) => {
       }
     }
 
-    if (type === 'FLASH_CARDS' && (!Array.isArray(flashCards) || flashCards.length === 0)) {
-      return res.status(400).json({
-        success: false,
-        message: 'flashCards array is required for FLASH_CARDS type',
+    // FLASH_CARDS: allow "container only" (one per day, decks via DayFlashCardDeck) or legacy inline cards
+    if (type === 'FLASH_CARDS') {
+      const existingFlashCardsResource = await prisma.resource.findFirst({
+        where: { dayId, type: 'FLASH_CARDS' },
       });
+      if (existingFlashCardsResource) {
+        return res.status(400).json({
+          success: false,
+          message: 'This day already has a Flash Cards resource. Only one per day is allowed.',
+        });
+      }
+      // If flashCards array provided, we create inline cards (legacy). Otherwise container only.
     }
 
     // QUIZ: only one Quiz resource per day
@@ -307,7 +314,7 @@ export const createResource = async (req, res, next) => {
             })),
           },
         }),
-        ...(type === 'FLASH_CARDS' && {
+        ...(type === 'FLASH_CARDS' && Array.isArray(flashCards) && flashCards.length > 0 && {
           flashCards: {
             create: flashCards.map((card, index) => ({
               question: card.question.trim(),

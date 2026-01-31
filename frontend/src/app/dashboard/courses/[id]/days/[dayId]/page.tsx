@@ -48,8 +48,21 @@ import {
   ChevronUp,
   AlertTriangle,
   Lightbulb,
-  Search
+  Search,
+  Layers
 } from 'lucide-react';
+
+interface DayFlashCardDeck {
+  id: string;
+  order: number;
+  isVisible: boolean;
+  deck: {
+    id: string;
+    title: string;
+    uniqueUrl: string;
+    _count?: { cards: number };
+  };
+}
 
 interface Day {
   id: string;
@@ -61,6 +74,7 @@ interface Day {
   };
   resources: Resource[];
   dayQuizzes: DayQuiz[];
+  dayFlashCardDecks?: DayFlashCardDeck[];
 }
 
 interface Resource {
@@ -416,7 +430,7 @@ export default function DayDetailPage() {
                     <div className="flex items-center gap-2">
                       {getResourceIcon(item.data.type)}
                       <CardTitle className="text-lg">
-                        {item.data.type === 'QUIZ' ? 'Quiz' : (item.data.title || getResourceTypeLabel(item.data.type))}
+                        {item.data.type === 'QUIZ' ? 'Quiz' : item.data.type === 'FLASH_CARDS' ? 'Flash Cards' : (item.data.title || getResourceTypeLabel(item.data.type))}
                       </CardTitle>
                       {!item.data.isVisible && (
                         <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
@@ -427,6 +441,8 @@ export default function DayDetailPage() {
                     <CardDescription className="mt-1">
                       {item.data.type === 'QUIZ'
                         ? `${day.dayQuizzes.length} quiz${day.dayQuizzes.length === 1 ? '' : 'zes'} attached`
+                        : item.data.type === 'FLASH_CARDS'
+                        ? `${day.dayFlashCardDecks?.length ?? 0} deck(s) attached`
                         : getResourceTypeLabel(item.data.type)}
                       {item.data.type === 'VIDEO' && item.data.videoUrl && (
                         <span className="ml-2 text-xs">• {item.data.videoUrl}</span>
@@ -548,6 +564,8 @@ export default function DayDetailPage() {
                   onPreview={(it) => {
                     if (it.data.type === 'QUIZ') {
                       setShowAddQuiz(true);
+                    } else if (it.data.type === 'FLASH_CARDS') {
+                      setPreviewResource(it.data);
                     } else {
                       setPreviewResource(it.data);
                     }
@@ -556,6 +574,8 @@ export default function DayDetailPage() {
                   onEdit={(it) => {
                     if (it.data.type === 'QUIZ') {
                       setShowAddQuiz(true);
+                    } else if (it.data.type === 'FLASH_CARDS') {
+                      router.push(`/dashboard/courses/${courseId}/days/${dayId}/resources/new?type=FLASH_CARDS`);
                     } else {
                       router.push(`/dashboard/courses/${courseId}/days/${dayId}/resources/${it.data.id}/edit`);
                     }
@@ -599,9 +619,10 @@ export default function DayDetailPage() {
 
       {/* Preview Modal */}
       <AnimatePresence>
-        {previewResource && (
+        {previewResource && day && (
           <ResourcePreviewModal
             resource={previewResource}
+            day={day}
             onClose={() => setPreviewResource(null)}
           />
         )}
@@ -770,7 +791,7 @@ function AddResourceModal({ dayId, courseId, onClose, onSuccess }: {
                       {type === 'VIDEO' && <Video className="h-5 w-5" />}
                       {type === 'NOTES' && <FileText className="h-5 w-5" />}
                       {type === 'BRIEF_NOTES' && <FileText className="h-5 w-5" />}
-                      {type === 'FLASH_CARDS' && <HelpCircle className="h-5 w-5" />}
+                      {type === 'FLASH_CARDS' && <Layers className="h-5 w-5" />}
                       {type === 'SHORT_QUESTIONS' && <HelpCircle className="h-5 w-5" />}
                       {type === 'ASSIGNMENT' && <ClipboardList className="h-5 w-5" />}
                       {type === 'GLOSSARY' && <BookOpen className="h-5 w-5" />}
@@ -792,7 +813,7 @@ function AddResourceModal({ dayId, courseId, onClose, onSuccess }: {
                           {type === 'VIDEO' && 'Add a video URL (YouTube/Vimeo)'}
                           {type === 'NOTES' && 'Add key points with multiple paragraphs'}
                           {type === 'BRIEF_NOTES' && 'Add brief notes with tables and rich formatting'}
-                          {type === 'FLASH_CARDS' && 'Create flip cards (Q&A pairs)'}
+                          {type === 'FLASH_CARDS' && 'Create decks (Q&A cards); manage decks like Quiz'}
                           {type === 'SHORT_QUESTIONS' && 'Add a simple Q&A pair'}
                           {type === 'ASSIGNMENT' && 'Add an assignment question'}
                           {type === 'GLOSSARY' && 'Add words and their meanings'}
@@ -858,10 +879,12 @@ function QuizResourceModal({ dayId, courseId, onClose, onSuccess }: {
 }
 
 // Resource Preview Modal Component
-function ResourcePreviewModal({ resource, onClose }: {
+function ResourcePreviewModal({ resource, day, onClose }: {
   resource: Resource;
+  day: Day | null;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [collapsedPreviewParagraphs, setCollapsedPreviewParagraphs] = useState<Set<string>>(new Set());
   const [collapsedPreviewQuestions, setCollapsedPreviewQuestions] = useState<Set<string>>(new Set());
   const [collapsedPreviewRecommendations, setCollapsedPreviewRecommendations] = useState<Set<string>>(new Set());
@@ -1220,20 +1243,51 @@ function ResourcePreviewModal({ resource, onClose }: {
                 })}
               </div>
             )}
-            {resource.type === 'FLASH_CARDS' && resource.flashCards && (
-              <div className="space-y-3">
-                {resource.flashCards.map((card) => (
-                  <Card key={card.id}>
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <div className="font-medium">Q: {linkifyText(card.question)}</div>
-                        <div className="text-sm text-muted-foreground">A: {linkifyText(card.answer)}</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            {resource.type === 'FLASH_CARDS' && (() => {
+              const dayDecks = day?.dayFlashCardDecks ?? [];
+              if (dayDecks.length > 0) {
+                return (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {dayDecks.length} deck{dayDecks.length === 1 ? '' : 's'} for this day. Manage decks to add or edit cards.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {dayDecks.map((dfd) => (
+                        <Button
+                          key={dfd.id}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/dashboard/flash-decks/${dfd.deck.id}/edit`)}
+                        >
+                          {dfd.deck.title} ({dfd.deck._count?.cards ?? 0} cards)
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              if (resource.flashCards && resource.flashCards.length > 0) {
+                return (
+                  <div className="space-y-3">
+                    {resource.flashCards.map((card) => (
+                      <Card key={card.id}>
+                        <CardContent className="p-4">
+                          <div className="space-y-2">
+                            <div className="font-medium">Q: {linkifyText(card.question)}</div>
+                            <div className="text-sm text-muted-foreground">A: {linkifyText(card.answer)}</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                );
+              }
+              return (
+                <div className="text-muted-foreground text-center py-4">
+                  No flash card decks yet. Add a deck from the Flash Card resource page.
+                </div>
+              );
+            })()}
             {resource.type === 'SHORT_QUESTIONS' && (
               <div className="space-y-3">
                 {resource.shortQuestions && resource.shortQuestions.length > 0 ? (

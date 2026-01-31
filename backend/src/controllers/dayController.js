@@ -109,6 +109,21 @@ export const getDayById = async (req, res, next) => {
             },
           },
         },
+        dayFlashCardDecks: {
+          orderBy: {
+            order: 'asc',
+          },
+          include: {
+            deck: {
+              select: {
+                id: true,
+                title: true,
+                uniqueUrl: true,
+                _count: { select: { cards: true } },
+              },
+            },
+          },
+        },
       },
     });
 
