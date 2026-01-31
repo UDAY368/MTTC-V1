@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, Sparkles, ChevronRight, ChevronLeft } from 'lucide-react';
+import { RotateCcw, Sparkles, ChevronRight, ChevronLeft, ArrowLeft } from 'lucide-react';
 import { FlashCard, FlashCardProgress } from '@/components/flashcard';
 
 export interface FlashCardItem {
@@ -17,9 +17,11 @@ interface FlashCardStackProps {
   cards: FlashCardItem[];
   /** Optional content at the left of the progress bar (e.g. Back to deck list, desktop inline only) */
   progressBarLeftContent?: React.ReactNode;
+  /** Optional: called when user clicks Back on the completion card (e.g. return to flash/course page) */
+  onBack?: () => void;
 }
 
-export function FlashCardStack({ title, cards, progressBarLeftContent }: FlashCardStackProps) {
+export function FlashCardStack({ title, cards, progressBarLeftContent, onBack }: FlashCardStackProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flippedId, setFlippedId] = useState<string | null>(null);
   const [exitDirection, setExitDirection] = useState<number>(0);
@@ -109,16 +111,30 @@ export function FlashCardStack({ title, cards, progressBarLeftContent }: FlashCa
           <p className="mb-5 text-sm leading-snug text-slate-300 sm:text-base">
             You&apos;ve gone through all {total} cards. Review again to strengthen memory.
           </p>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={resetStack}
-            className="inline-flex items-center gap-2 rounded-xl border border-amber-400/60 bg-amber-500/25 px-4 py-2.5 text-sm font-semibold text-amber-200 transition-colors hover:bg-amber-500/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 sm:px-5 sm:py-3 sm:text-base"
-          >
-            <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
-            Study again
-          </motion.button>
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            {onBack && (
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onBack}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-500/50 bg-slate-700/40 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-600/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 sm:px-5 sm:py-3 sm:text-base"
+              >
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                Back
+              </motion.button>
+            )}
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={resetStack}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-400/60 bg-amber-500/25 px-4 py-2.5 text-sm font-semibold text-amber-200 transition-colors hover:bg-amber-500/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 sm:px-5 sm:py-3 sm:text-base"
+            >
+              <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
+              Study again
+            </motion.button>
+          </div>
         </motion.div>
       </div>
     );

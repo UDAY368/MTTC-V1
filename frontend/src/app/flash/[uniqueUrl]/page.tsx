@@ -73,6 +73,20 @@ export default function FlashDeckPage() {
     order: c.order,
   }));
 
+  const handleBack = () => {
+    if (returnTo) {
+      const params = new URLSearchParams();
+      if (dayId) params.set('dayId', dayId);
+      if (resourceId) params.set('resourceId', resourceId);
+      const qs = params.toString();
+      router.push(qs ? `${returnTo}?${qs}` : returnTo);
+    } else if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
@@ -105,19 +119,7 @@ export default function FlashDeckPage() {
             variant="ghost"
             size="sm"
             className="inline-flex items-center gap-2"
-            onClick={() => {
-              if (returnTo) {
-                const params = new URLSearchParams();
-                if (dayId) params.set('dayId', dayId);
-                if (resourceId) params.set('resourceId', resourceId);
-                const qs = params.toString();
-                router.push(qs ? `${returnTo}?${qs}` : returnTo);
-              } else if (typeof window !== 'undefined' && window.history.length > 1) {
-                router.back();
-              } else {
-                router.push('/');
-              }
-            }}
+            onClick={handleBack}
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -128,7 +130,7 @@ export default function FlashDeckPage() {
       </header>
       <main className="flex-1 min-h-0 flex flex-col max-w-4xl w-full mx-auto px-3 py-3 sm:px-4 sm:py-6">
         <div className="flex-1 min-h-0 flex flex-col">
-          <FlashCardStack title={deck.title} cards={deckCards} />
+          <FlashCardStack title={deck.title} cards={deckCards} onBack={handleBack} />
         </div>
       </main>
     </div>
