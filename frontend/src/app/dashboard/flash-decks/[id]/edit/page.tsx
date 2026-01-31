@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Loader2, Plus, Trash2, Layers, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2, Layers, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 
 export default function EditFlashDeckPage() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function EditFlashDeckPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
   const [collapsedCards, setCollapsedCards] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -95,6 +96,8 @@ export default function EditFlashDeckPage() {
     }
 
     setLoading(true);
+    setError('');
+    setShowSuccess(false);
     try {
       await api.put(`/flash-decks/${id}`, {
         title: title.trim(),
@@ -104,10 +107,13 @@ export default function EditFlashDeckPage() {
           answer: c.answer.trim() || 'Answer',
         })),
       });
-      setLoading(false);
+      setShowSuccess(true);
+      // Auto-hide success message after 4 seconds
+      setTimeout(() => setShowSuccess(false), 4000);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || 'Failed to update deck');
+    } finally {
       setLoading(false);
     }
   };
@@ -276,6 +282,13 @@ export default function EditFlashDeckPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {showSuccess && (
+          <div className="text-sm text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950/50 border border-green-200 dark:border-green-800 p-3 rounded-md flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            Deck saved successfully.
+          </div>
+        )}
 
         {error && (
           <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">

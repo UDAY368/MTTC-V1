@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp } from 'lucide-react';
@@ -48,6 +48,27 @@ function BackToTopButton() {
         </motion.button>
       )}
     </AnimatePresence>
+  );
+}
+
+/**
+ * Inner content that uses useSearchParams (must be in Suspense for Next.js).
+ */
+function CourseLearnContent({ data }: { data: LearnData }) {
+  const searchParams = useSearchParams();
+  const initialDayId = searchParams.get('dayId') ?? undefined;
+  const initialResourceId = searchParams.get('resourceId') ?? undefined;
+  return (
+    <>
+      <CourseViewLayout
+        courseId={data.id}
+        courseName={data.name}
+        days={data.days}
+        initialDayId={initialDayId}
+        initialResourceId={initialResourceId}
+      />
+      <BackToTopButton />
+    </>
   );
 }
 
@@ -148,8 +169,20 @@ export default function CourseLearnPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <CourseViewLayout courseId={data.id} courseName={data.name} days={data.days} />
-      <BackToTopButton />
+      <Suspense
+        fallback={
+          <main className="mx-auto max-w-6xl px-3 py-6 sm:px-4 sm:py-8 md:px-6 lg:px-8 lg:py-10">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8 md:gap-10 lg:gap-12">
+              <div className="min-w-0 flex-1 space-y-4">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-full max-w-xl" />
+              </div>
+            </div>
+          </main>
+        }
+      >
+        <CourseLearnContent data={data} />
+      </Suspense>
     </div>
   );
 }

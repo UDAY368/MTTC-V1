@@ -23,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities';
 import api from '@/lib/api';
 import { QuizPreviewModal } from '@/components/quiz/QuizPreviewModal';
 import { QuizResourceAttachView } from '@/components/quiz/QuizResourceAttachView';
+import { FlashCardDeckAttachView } from '@/components/flash-cards/FlashCardDeckAttachView';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -157,6 +158,7 @@ export default function DayDetailPage() {
   const [error, setError] = useState('');
   const [showAddResource, setShowAddResource] = useState(false);
   const [showAddQuiz, setShowAddQuiz] = useState(false);
+  const [showFlashCardDecks, setShowFlashCardDecks] = useState(false);
   const [previewResource, setPreviewResource] = useState<Resource | null>(null);
   const [previewQuiz, setPreviewQuiz] = useState<DayQuiz | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -565,7 +567,7 @@ export default function DayDetailPage() {
                     if (it.data.type === 'QUIZ') {
                       setShowAddQuiz(true);
                     } else if (it.data.type === 'FLASH_CARDS') {
-                      setPreviewResource(it.data);
+                      setShowFlashCardDecks(true);
                     } else {
                       setPreviewResource(it.data);
                     }
@@ -610,6 +612,20 @@ export default function DayDetailPage() {
             dayId={dayId}
             courseId={courseId}
             onClose={() => setShowAddQuiz(false)}
+            onSuccess={() => {
+              fetchDay();
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Flash Card Resource Modal — same as Quiz: list decks, Preview / Edit / Remove / Create Deck */}
+      <AnimatePresence>
+        {showFlashCardDecks && (
+          <FlashCardResourceModal
+            dayId={dayId}
+            courseId={courseId}
+            onClose={() => setShowFlashCardDecks(false)}
             onSuccess={() => {
               fetchDay();
             }}
@@ -871,6 +887,51 @@ function QuizResourceModal({ dayId, courseId, onClose, onSuccess }: {
                 <Button onClick={onClose}>Done</Button>
               </div>
             </QuizResourceAttachView>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}
+
+// Flash Card Resource Modal — list decks, Preview / Edit / Remove / Create Deck (same UX as Quiz)
+function FlashCardResourceModal({ dayId, courseId, onClose, onSuccess }: {
+  dayId: string;
+  courseId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-card rounded-xl border shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+      >
+        <Card className="border-0 shadow-none flex flex-col flex-1 min-h-0">
+          <CardHeader className="shrink-0 border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="h-5 w-5" />
+                  Flash Card Resource
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Add and manage flash card decks for this day. Create a deck or attach existing ones. Preview, edit, or remove below.
+                </CardDescription>
+              </div>
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto min-h-0 p-6 pt-0">
+            <FlashCardDeckAttachView dayId={dayId} courseId={courseId} onSuccess={onSuccess}>
+              <div className="shrink-0 border-t pt-4 mt-6 flex justify-end">
+                <Button onClick={onClose}>Done</Button>
+              </div>
+            </FlashCardDeckAttachView>
           </CardContent>
         </Card>
       </motion.div>

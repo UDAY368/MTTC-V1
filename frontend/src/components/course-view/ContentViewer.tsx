@@ -4,22 +4,40 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, BookOpen, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, ExternalLink, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { linkifyText, getEmbedUrl } from './resource-display-utils';
 import type { DayItem } from './types';
+import type { FlashCardItem } from './FlashCardStack';
 
 const FlashCardStack = dynamic(
   () => import('./FlashCardStack').then((m) => ({ default: m.FlashCardStack })),
   { ssr: false }
 );
 
+/** Desktop breakpoint: inline flash deck opens in content area instead of new page */
+const DESKTOP_BREAKPOINT_PX = 1024;
+
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT_PX}px)`);
+    const set = () => setIsDesktop(mq.matches);
+    set();
+    mq.addEventListener('change', set);
+    return () => mq.removeEventListener('change', set);
+  }, []);
+  return isDesktop;
+}
+
 interface ContentViewerProps {
+  courseId: string;
   courseName: string;
   selectedItem: DayItem | null;
   currentItems: DayItem[];
   onSelectItem: (item: DayItem | null) => void;
-  selectedDay?: { dayQuizzes: import('./types').LearnDayQuiz[]; dayFlashCardDecks?: import('./types').LearnDayFlashCardDeck[] };
+  selectedDay?: { id: string; dayQuizzes: import('./types').LearnDayQuiz[]; dayFlashCardDecks?: import('./types').LearnDayFlashCardDeck[] };
   selectedDayNumber?: number;
 }
 
@@ -44,12 +62,19 @@ function ResourceContent({
   selectedDayNumber,
   dayQuizzesForQuizResource,
   dayFlashCardDecksForFlashCardResource,
+  courseId,
+  selectedDayId,
+  onOpenFlashDeckInline,
 }: {
   item: DayItem;
   currentItems?: DayItem[];
   selectedDayNumber?: number;
   dayQuizzesForQuizResource?: import('./types').LearnDayQuiz[];
   dayFlashCardDecksForFlashCardResource?: import('./types').LearnDayFlashCardDeck[];
+  courseId?: string;
+  selectedDayId?: string;
+  /** When set (desktop), "Open Deck" opens inline instead of navigating */
+  onOpenFlashDeckInline?: (title: string, cards: FlashCardItem[]) => void;
 }) {
   const [collapsedNotes, setCollapsedNotes] = useState<Set<string>>(new Set());
   const [collapsedShort, setCollapsedShort] = useState<Set<string>>(new Set());
@@ -89,7 +114,18 @@ function ResourceContent({
   const isQuizResource = item.type === 'resource' && item.resource.type === 'QUIZ';
   const dayQuizzes = dayQuizzesForQuizResource ?? [];
   if (isQuizResource && dayQuizzes.length > 0) {
-    const quizUrl = (dq: (typeof dayQuizzes)[0]) => `/quiz/${dq.quiz.uniqueUrl}`;
+    const buildQuizUrl = (uniqueUrl: string) => {
+      if (courseId && selectedDayId && item.type === 'resource') {
+        const base = `/quiz/${uniqueUrl}`;
+        const params = new URLSearchParams();
+        params.set('returnTo', `/course/${courseId}/learn`);
+        params.set('dayId', selectedDayId);
+        params.set('resourceId', item.resource.id);
+        return `${base}?${params.toString()}`;
+      }
+      return `/quiz/${uniqueUrl}`;
+    };
+    const quizUrl = (dq: (typeof dayQuizzes)[0]) => buildQuizUrl(dq.quiz.uniqueUrl);
     return (
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -143,15 +179,9 @@ function ResourceContent({
                     <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-2.5">
                       <Link
                         href={quizUrl(dq)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
+                        className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-5 sm:py-3.5 sm:text-base lg:px-6 lg:py-4 lg:text-lg"
                       >
                         Open Quiz
-                      </Link>
-                      <Link
-                        href={quizUrl(dq)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm transition-all duration-200 hover:bg-muted/60 hover:border-primary/30 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
-                      >
-                        Retake Quiz
                       </Link>
                     </div>
                   </CardContent>
@@ -174,7 +204,20 @@ function ResourceContent({
   if (item.type === 'dayQuiz') {
     const quizItems = currentItems.filter((i): i is typeof item => i.type === 'dayQuiz');
     const quizzes = quizItems.length > 0 ? quizItems : [item];
-    const quizUrl = (quizItem: typeof item) => `/quiz/${quizItem.dayQuiz.quiz.uniqueUrl}`;
+    const quizResourceItem = currentItems.find((i) => i.type === 'resource' && i.resource.type === 'QUIZ');
+    const quizResourceId = quizResourceItem && quizResourceItem.type === 'resource' ? quizResourceItem.resource.id : undefined;
+    const buildQuizUrl = (uniqueUrl: string) => {
+      if (courseId && selectedDayId && quizResourceId) {
+        const base = `/quiz/${uniqueUrl}`;
+        const params = new URLSearchParams();
+        params.set('returnTo', `/course/${courseId}/learn`);
+        params.set('dayId', selectedDayId);
+        params.set('resourceId', quizResourceId);
+        return `${base}?${params.toString()}`;
+      }
+      return `/quiz/${uniqueUrl}`;
+    };
+    const quizUrl = (quizItem: typeof item) => buildQuizUrl(quizItem.dayQuiz.quiz.uniqueUrl);
 
     return (
       <div className="space-y-4">
@@ -232,15 +275,9 @@ function ResourceContent({
                     <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-2.5">
                       <Link
                         href={quizUrl(quizItem)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
+                        className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-5 sm:py-3.5 sm:text-base lg:px-6 lg:py-4 lg:text-lg"
                       >
                         Open Quiz
-                      </Link>
-                      <Link
-                        href={quizUrl(quizItem)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm transition-all duration-200 hover:bg-muted/60 hover:border-primary/30 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
-                      >
-                        Retake Quiz
                       </Link>
                     </div>
                   </CardContent>
@@ -388,7 +425,12 @@ function ResourceContent({
           {dayFlashCardDecks.map((dfd, index) => {
             const deck = dfd.deck;
             const cardCount = deck.cards?.length ?? 0;
-            const flashUrl = `/flash/${deck.uniqueUrl}`;
+            const baseFlashUrl = `/flash/${deck.uniqueUrl}`;
+            const returnTo =
+              courseId && selectedDayId && item.type === 'resource'
+                ? `${baseFlashUrl}?returnTo=${encodeURIComponent(`/course/${courseId}/learn`)}&dayId=${encodeURIComponent(selectedDayId)}&resourceId=${encodeURIComponent(item.resource.id)}`
+                : baseFlashUrl;
+            const flashUrl = returnTo;
             return (
               <motion.div
                 key={dfd.id}
@@ -426,12 +468,24 @@ function ResourceContent({
                       )}
                     </div>
                     <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-2.5">
-                      <Link
-                        href={flashUrl}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
-                      >
-                        Open Deck
-                      </Link>
+                      {onOpenFlashDeckInline ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onOpenFlashDeckInline(deck.title, (deck.cards ?? []).map((c) => ({ id: c.id, question: c.question, answer: c.answer, order: c.order })))
+                          }
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
+                        >
+                          Open Deck
+                        </button>
+                      ) : (
+                        <Link
+                          href={flashUrl}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
+                        >
+                          Open Deck
+                        </Link>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -640,6 +694,7 @@ function ResourceContent({
  * Center panel — selected resource content; clear layout that does not overlap sidebars; premium look.
  */
 export function ContentViewer({
+  courseId,
   courseName,
   selectedItem,
   currentItems,
@@ -647,9 +702,19 @@ export function ContentViewer({
   selectedDay,
   selectedDayNumber,
 }: ContentViewerProps) {
+  const isDesktop = useIsDesktop();
+  const [inlineFlashDeck, setInlineFlashDeck] = useState<{ title: string; cards: FlashCardItem[] } | null>(null);
+
+  useEffect(() => {
+    setInlineFlashDeck(null);
+  }, [selectedItem?.id, selectedItem?.type]);
+
   const idx = selectedItem ? currentItems.findIndex((i) => i.id === selectedItem.id && i.type === selectedItem.type) : -1;
   const prevItem = idx > 0 ? currentItems[idx - 1] : null;
   const nextItem = idx >= 0 && idx < currentItems.length - 1 ? currentItems[idx + 1] : null;
+
+  const isFlashCardResource = selectedItem?.type === 'resource' && selectedItem.resource.type === 'FLASH_CARDS';
+  const showInlineFlashDeck = isDesktop && inlineFlashDeck != null && selectedItem != null;
 
   return (
     <main
@@ -669,11 +734,45 @@ export function ContentViewer({
       </header>
       {/* Content area — scrollable on both mobile and desktop; touch momentum on iOS */}
       <div
-        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5 sm:px-7 sm:py-5 md:px-8 md:py-6 lg:px-10 lg:py-8"
+        className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5 sm:px-7 sm:py-5 md:px-8 md:py-6 lg:px-10 lg:py-8 ${showInlineFlashDeck ? 'flex flex-col' : ''}`}
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
         <AnimatePresence mode="wait">
-          {selectedItem ? (
+          {showInlineFlashDeck && inlineFlashDeck ? (
+            <motion.div
+              key="inline-flash-deck"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+              className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col"
+            >
+              <div className="min-h-[min(400px,60vh)] flex flex-1 flex-col">
+                <FlashCardStack
+                  title={inlineFlashDeck.title}
+                  cards={inlineFlashDeck.cards}
+                  progressBarLeftContent={
+                    <div className="group relative inline-block">
+                      <span
+                        className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-primary/40 bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-lg ring-2 ring-primary/20 transition-opacity duration-200 md:block md:opacity-0 md:group-hover:opacity-100"
+                        aria-hidden
+                      >
+                        Back to the Deck List
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setInlineFlashDeck(null)}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/50 bg-primary/20 text-white shadow-sm transition-colors hover:bg-primary/30 hover:border-primary/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-10 sm:w-10"
+                        aria-label="Back to deck list"
+                      >
+                        <ArrowLeft className="h-5 w-5 shrink-0 sm:h-5 sm:w-5" strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  }
+                />
+              </div>
+            </motion.div>
+          ) : selectedItem ? (
             <motion.div
               key={selectedItem.type + selectedItem.id}
               initial={{ opacity: 0, y: 8 }}
@@ -696,6 +795,9 @@ export function ContentViewer({
                     ? selectedDay?.dayFlashCardDecks
                     : undefined
                 }
+                courseId={courseId}
+                selectedDayId={selectedDay?.id}
+                onOpenFlashDeckInline={isDesktop && isFlashCardResource ? (title, cards) => setInlineFlashDeck({ title, cards }) : undefined}
               />
             </motion.div>
           ) : (

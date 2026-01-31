@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import quizApi from '@/lib/quizApi';
 import { usePreventNavigation } from '@/hooks/usePreventNavigation';
@@ -69,7 +69,11 @@ interface Answer {
 export default function QuizPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const uniqueUrl = params.uniqueUrl as string;
+  const returnTo = searchParams.get('returnTo');
+  const dayId = searchParams.get('dayId');
+  const resourceId = searchParams.get('resourceId');
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
@@ -428,7 +432,7 @@ export default function QuizPage() {
             <h1 className="text-3xl font-light">{quiz?.course.name}</h1>
           </motion.div>
 
-          {/* Back button + Quiz title row — below course name; Back uses router.back() to return to exact previous page */}
+          {/* Back button — when returnTo is set (from course learn), go to Quiz resource; else router.back() or home */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -437,7 +441,19 @@ export default function QuizPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.back()}
+              onClick={() => {
+                if (returnTo) {
+                  const params = new URLSearchParams();
+                  if (dayId) params.set('dayId', dayId);
+                  if (resourceId) params.set('resourceId', resourceId);
+                  const qs = params.toString();
+                  router.push(qs ? `${returnTo}?${qs}` : returnTo);
+                } else if (typeof window !== 'undefined' && window.history.length > 1) {
+                  router.back();
+                } else {
+                  router.push('/');
+                }
+              }}
               className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary shadow-md"
               aria-label={selectedLanguage === 'en' ? 'Back to previous page' : 'మునుపటి పేజీకి తిరిగి వెళ్ళండి'}
             >
@@ -1054,7 +1070,7 @@ export default function QuizPage() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <CardTitle className="text-xl font-light">
+                    <CardTitle className="text-base font-light sm:text-xl">
                       {selectedLanguage === 'en' ? 'Question' : 'ప్రశ్న'} {currentQuestionIndex + 1} {selectedLanguage === 'en' ? 'of' : '/'} {quiz.questions.length}
                     </CardTitle>
                     <div className="flex items-center gap-2">
@@ -1088,7 +1104,47 @@ export default function QuizPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <p className="text-lg text-foreground leading-relaxed">{getLocalizedText(currentQuestion)}</p>
+                  {/* Mobile-only: nav at top of question card */}
+                  <div className="flex md:hidden items-center justify-between gap-2 pb-3 border-b border-border/60">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+                      disabled={currentQuestionIndex === 0}
+                      className="flex items-center gap-1 shrink-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>{selectedLanguage === 'en' ? 'Previous' : 'మునుపటి'}</span>
+                    </Button>
+                    {currentQuestionIndex === quiz.questions.length - 1 ? (
+                      <Button
+                        size="sm"
+                        onClick={handleConfirmSubmit}
+                        disabled={submitted || submitting}
+                        className="bg-green-600 hover:bg-green-700 shrink-0"
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                            {selectedLanguage === 'en' ? 'Submitting...' : 'సమర్పిస్తోంది...'}
+                          </>
+                        ) : (
+                          selectedLanguage === 'en' ? 'Submit Quiz' : 'క్విజ్ సమర్పించండి'
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => setCurrentQuestionIndex(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))}
+                        className="flex items-center gap-1 shrink-0"
+                      >
+                        <span>{selectedLanguage === 'en' ? 'Next' : 'తదుపరి'}</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-foreground leading-relaxed sm:text-lg">{getLocalizedText(currentQuestion)}</p>
 
                   <div className="space-y-3">
                     {currentQuestion.options.map((option, optIndex) => {
@@ -1104,7 +1160,7 @@ export default function QuizPage() {
                             submitAnswer(currentQuestion.id);
                           }}
                           className={`
-                            w-full p-4 rounded-lg text-left transition-all flex items-center gap-3
+                            w-full p-3 sm:p-4 rounded-lg text-left transition-all flex items-center gap-3
                             ${
                               isSelected
                                 ? 'bg-primary/10 border-2 border-primary text-foreground'
@@ -1131,7 +1187,7 @@ export default function QuizPage() {
                               </motion.div>
                             )}
                           </div>
-                          <span className="flex-1">{getLocalizedText(option)}</span>
+                          <span className="flex-1 text-sm sm:text-base">{getLocalizedText(option)}</span>
                         </motion.button>
                       );
                     })}

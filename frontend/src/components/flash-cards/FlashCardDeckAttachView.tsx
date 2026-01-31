@@ -187,6 +187,12 @@ export function FlashCardDeckAttachView({ dayId, courseId, onSuccess, children }
           <FlashCardDeckPreviewModal
             dayDeck={previewDeck}
             onClose={() => setPreviewDeck(null)}
+            courseId={courseId}
+            dayId={dayId}
+            onRemove={async (dfd) => {
+              await handleRemoveFromDay(dfd);
+              setPreviewDeck(null);
+            }}
           />
         )}
       </AnimatePresence>

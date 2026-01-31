@@ -13,6 +13,9 @@ export interface CourseViewLayoutProps {
   courseId: string;
   courseName: string;
   days: LearnDay[];
+  /** When coming back from flash deck, restore this day and resource */
+  initialDayId?: string;
+  initialResourceId?: string;
 }
 
 // Only resources (Quiz is one resource; day quizzes shown inside it)
@@ -28,16 +31,9 @@ function mergeDayItems(day: LearnDay): DayItem[] {
  * Three-panel layout: DaySidebar | ContentViewer | ResourceRail.
  * Day sidebar and resource rail are always visible (persistent); both can be minimized to icon/number strips.
  */
-export function CourseViewLayout({ courseId, courseName, days }: CourseViewLayoutProps) {
+export function CourseViewLayout({ courseId, courseName, days, initialDayId, initialResourceId }: CourseViewLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [railCollapsed, setRailCollapsed] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      setSidebarCollapsed(false);
-      setRailCollapsed(false);
-    }
-  }, []);
 
   const daysWithItems = useMemo(
     () => days.map((d) => ({ ...d, items: mergeDayItems(d) })),
@@ -49,6 +45,26 @@ export function CourseViewLayout({ courseId, courseName, days }: CourseViewLayou
 
   const [selectedDayId, setSelectedDayId] = useState<string | null>(() => firstDay?.id ?? null);
   const [selectedItem, setSelectedItem] = useState<DayItem | null>(() => firstItem ?? null);
+
+  // Restore day + resource when returning from flash deck (Back button)
+  useEffect(() => {
+    if (!initialDayId || !initialResourceId || daysWithItems.length === 0) return;
+    const day = daysWithItems.find((d) => d.id === initialDayId);
+    if (!day) return;
+    const resourceItem = day.items.find(
+      (i) => i.type === 'resource' && i.resource.id === initialResourceId
+    );
+    if (!resourceItem) return;
+    setSelectedDayId(initialDayId);
+    setSelectedItem(resourceItem);
+  }, [initialDayId, initialResourceId, daysWithItems]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setSidebarCollapsed(false);
+      setRailCollapsed(false);
+    }
+  }, []);
 
   const selectedDay = daysWithItems.find((d) => d.id === selectedDayId) ?? firstDay;
   const currentItems = selectedDay?.items ?? [];
@@ -102,6 +118,7 @@ export function CourseViewLayout({ courseId, courseName, days }: CourseViewLayou
         />
         <div className="min-h-0 flex-1 min-w-0">
           <ContentViewer
+            courseId={courseId}
             courseName={courseName}
             selectedItem={selectedItem}
             currentItems={currentItems}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
@@ -26,7 +26,11 @@ interface Deck {
 export default function FlashDeckPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const uniqueUrl = params.uniqueUrl as string;
+  const returnTo = searchParams.get('returnTo');
+  const dayId = searchParams.get('dayId');
+  const resourceId = searchParams.get('resourceId');
 
   const [deck, setDeck] = useState<Deck | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,17 +101,32 @@ export default function FlashDeckPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="shrink-0 border-b border-border/60 bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="#" onClick={(e) => { e.preventDefault(); router.back(); }} className="inline-flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="inline-flex items-center gap-2"
+            onClick={() => {
+              if (returnTo) {
+                const params = new URLSearchParams();
+                if (dayId) params.set('dayId', dayId);
+                if (resourceId) params.set('resourceId', resourceId);
+                const qs = params.toString();
+                router.push(qs ? `${returnTo}?${qs}` : returnTo);
+              } else if (typeof window !== 'undefined' && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push('/');
+              }
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </Button>
           <h1 className="text-lg font-semibold truncate flex-1 text-center">{deck.title}</h1>
           <div className="w-20" />
         </div>
       </header>
-      <main className="flex-1 min-h-0 flex flex-col max-w-4xl w-full mx-auto px-4 py-4 sm:py-6">
+      <main className="flex-1 min-h-0 flex flex-col max-w-4xl w-full mx-auto px-3 py-3 sm:px-4 sm:py-6">
         <div className="flex-1 min-h-0 flex flex-col">
           <FlashCardStack title={deck.title} cards={deckCards} />
         </div>
