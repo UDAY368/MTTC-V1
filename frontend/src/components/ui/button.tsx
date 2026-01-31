@@ -42,16 +42,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const computedClassName = cn(buttonVariants({ variant, size, className }))
     if (asChild && React.Children.count(props.children) === 1 && React.isValidElement(props.children)) {
       const child = props.children as React.ReactElement<React.HTMLAttributes<HTMLElement>>
-      const childRef = (child as React.ReactElement & { ref?: React.Ref<unknown> }).ref
+      const childRef = (child as React.ReactElement & { ref?: React.Ref<HTMLElement | null> }).ref
+      const mergedRef = (node: HTMLElement | null) => {
+        if (typeof childRef === "function") childRef(node)
+        else if (childRef) (childRef as React.MutableRefObject<HTMLElement | null>).current = node
+        if (typeof ref === "function") ref(node as HTMLButtonElement | null)
+        else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node as HTMLButtonElement | null
+      }
       const mergedProps: React.HTMLAttributes<HTMLElement> & React.ClassAttributes<HTMLElement> = {
         ...child.props,
         className: cn(computedClassName, child.props.className),
-        ref: (node: unknown) => {
-          if (typeof childRef === "function") childRef(node)
-          else if (childRef) (childRef as React.MutableRefObject<unknown>).current = node
-          if (typeof ref === "function") ref(node)
-          else if (ref) (ref as React.MutableRefObject<unknown>).current = node
-        },
+        ref: mergedRef,
       }
       return React.cloneElement(child, mergedProps)
     }
