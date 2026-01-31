@@ -9,7 +9,7 @@ import logoImage from '@/assets/LOGO.png';
 
 /**
  * Landing Header — sticky, minimal.
- * Logo (top-left), "Dhayana Dharma Ashramam" centered, theme toggle (top-right).
+ * Logo (top-left), "Dhyana Dharma Ashramam" centered, theme toggle (top-right).
  */
 export function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -26,12 +26,12 @@ export function Header() {
         <Link
           href="/home"
           className="mr-2 flex shrink-0 items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
-          aria-label="Dhayana Dharma Ashramam – Home"
+          aria-label="Dhyana Dharma Ashramam – Home"
         >
           <div className="relative h-10 w-10 overflow-hidden rounded-lg shrink-0 sm:h-12 sm:w-12 md:h-14 md:w-14">
             <Image
               src={logoImage}
-              alt="Dhayana Dharma Ashramam"
+              alt="Dhyana Dharma Ashramam"
               className="h-full w-full object-contain"
               width={56}
               height={56}
@@ -43,7 +43,7 @@ export function Header() {
 
         {/* Brand name — centered, responsive font */}
         <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[14px] font-semibold text-foreground leading-tight whitespace-nowrap sm:text-base md:text-lg lg:text-xl pointer-events-none">
-          Dhayana Dharma Ashramam
+          Dhyana Dharma Ashramam
         </p>
 
         {/* Theme toggle — right corner, same width as logo for balance */}
