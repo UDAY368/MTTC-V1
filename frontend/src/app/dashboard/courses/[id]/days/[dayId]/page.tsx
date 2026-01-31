@@ -1449,12 +1449,29 @@ function ResourcePreviewModal({ resource, onClose }: {
   );
 }
 
+// Types for quiz preview (questions/options with order for sorting)
+interface QuizPreviewOption {
+  id: string;
+  text: string;
+  textTe: string;
+  isCorrect: boolean;
+  order: number;
+}
+interface QuizPreviewQuestion {
+  id: string;
+  text: string;
+  textTe: string;
+  type: string;
+  order: number;
+  options: QuizPreviewOption[];
+}
+
 // (QuizPreviewModal is imported from @/components/quiz/QuizPreviewModal — local duplicate removed)
 function _QuizPreviewModalRemoved_unused({ dayQuiz, onClose }: {
   dayQuiz: DayQuiz;
   onClose: () => void;
 }) {
-  const [quiz, setQuiz] = useState<{ id: string; title: string; description?: string; durationMinutes: number; questions: unknown[] } | null>(null);
+  const [quiz, setQuiz] = useState<{ id: string; title: string; description?: string; durationMinutes: number; questions: QuizPreviewQuestion[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
