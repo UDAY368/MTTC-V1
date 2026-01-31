@@ -751,6 +751,7 @@ export function ContentViewer({
                 <FlashCardStack
                   title={inlineFlashDeck.title}
                   cards={inlineFlashDeck.cards}
+                  onBack={() => setInlineFlashDeck(null)}
                   progressBarLeftContent={
                     <div className="group relative inline-block">
                       <span

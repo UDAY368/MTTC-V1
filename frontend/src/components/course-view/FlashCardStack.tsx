@@ -95,7 +95,7 @@ export function FlashCardStack({ title, cards, progressBarLeftContent, onBack }:
           initial={{ opacity: 0, scale: 0.92, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-          className="relative w-full max-w-[320px] overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-slate-800 via-blue-900 to-indigo-900 p-6 text-center shadow-lg shadow-blue-900/25 sm:p-8 md:max-w-[360px] md:p-8"
+          className="relative w-full max-w-[320px] overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-slate-800 via-blue-900 to-indigo-900 p-6 text-center shadow-lg shadow-blue-900/25 sm:p-8 md:max-w-[400px] md:p-8"
         >
           <div className="flex justify-center mb-4">
             <motion.div
@@ -111,19 +111,19 @@ export function FlashCardStack({ title, cards, progressBarLeftContent, onBack }:
           <p className="mb-5 text-sm leading-snug text-slate-300 sm:text-base">
             You&apos;ve gone through all {total} cards. Review again to strengthen memory.
           </p>
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-3">
-            {onBack && (
+          <div className="flex flex-col-reverse sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-3">
+            {onBack ? (
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onBack}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-500/50 bg-slate-700/40 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-600/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 sm:px-5 sm:py-3 sm:text-base"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-500/50 bg-slate-700/40 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-600/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 sm:px-5 sm:py-3 sm:text-base shrink-0"
               >
                 <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 Back
               </motion.button>
-            )}
+            ) : null}
             <motion.button
               type="button"
               whileHover={{ scale: 1.03 }}
