@@ -43,7 +43,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild && React.Children.count(props.children) === 1 && React.isValidElement(props.children)) {
       const child = props.children as React.ReactElement<React.HTMLAttributes<HTMLElement>>
       const childRef = (child as React.ReactElement & { ref?: React.Ref<unknown> }).ref
-      return React.cloneElement(child, {
+      const mergedProps: React.HTMLAttributes<HTMLElement> & React.ClassAttributes<HTMLElement> = {
         ...child.props,
         className: cn(computedClassName, child.props.className),
         ref: (node: unknown) => {
@@ -52,7 +52,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           if (typeof ref === "function") ref(node)
           else if (ref) (ref as React.MutableRefObject<unknown>).current = node
         },
-      })
+      }
+      return React.cloneElement(child, mergedProps)
     }
     return (
       <button
