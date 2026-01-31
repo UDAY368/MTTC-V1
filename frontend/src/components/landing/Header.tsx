@@ -25,7 +25,7 @@ export function Header() {
         {/* Logo — top-left, responsive size */}
         <Link
           href="/home"
-          className="flex shrink-0 items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
+          className="mr-2 flex shrink-0 items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
           aria-label="Dhayana Dharma Ashramam – Home"
         >
           <div className="relative h-10 w-10 overflow-hidden rounded-lg shrink-0 sm:h-12 sm:w-12 md:h-14 md:w-14">
@@ -42,7 +42,7 @@ export function Header() {
         </Link>
 
         {/* Brand name — centered, responsive font */}
-        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold text-foreground leading-tight whitespace-nowrap sm:text-base md:text-lg lg:text-xl pointer-events-none">
+        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[14px] font-semibold text-foreground leading-tight whitespace-nowrap sm:text-base md:text-lg lg:text-xl pointer-events-none">
           Dhayana Dharma Ashramam
         </p>
 

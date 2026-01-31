@@ -292,7 +292,10 @@ export function ResourceRail({
 
 export { RAIL_WIDTH_COLLAPSED, RAIL_WIDTH_EXPANDED };
 
-/** Mobile-only: resource icon button with portal tooltip (above strip). */
+/** Duration (ms) to show tooltip after touch on mobile */
+const MOBILE_TOOLTIP_DURATION_MS = 2200;
+
+/** Mobile-only: resource icon button with portal tooltip (above strip). Touch: tap shows tooltip for a few seconds. */
 function MobileResourceButton({
   item,
   isActive,
@@ -305,6 +308,8 @@ function MobileResourceButton({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipRect, setTooltipRect] = useState({ x: 0, y: 0 });
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ignoreBlurRef = useRef(false);
   const type = item.type === 'dayQuiz' ? 'dayQuiz' : item.resource.type;
   const label = itemLabel(item);
 
@@ -322,6 +327,36 @@ function MobileResourceButton({
 
   const handleClose = useCallback(() => {
     setShowTooltip(false);
+    ignoreBlurRef.current = false;
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  }, []);
+
+  /** On tap (mobile): show tooltip, select item, keep tooltip visible for MOBILE_TOOLTIP_DURATION_MS then hide. */
+  const handleClick = useCallback(() => {
+    updateRect();
+    setShowTooltip(true);
+    onSelectItem(item);
+    ignoreBlurRef.current = true;
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = setTimeout(() => {
+      closeTimeoutRef.current = null;
+      setShowTooltip(false);
+      ignoreBlurRef.current = false;
+    }, MOBILE_TOOLTIP_DURATION_MS);
+  }, [updateRect, onSelectItem, item]);
+
+  const handleBlur = useCallback(() => {
+    if (ignoreBlurRef.current) return;
+    handleClose();
+  }, [handleClose]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -354,14 +389,11 @@ function MobileResourceButton({
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => {
-          onSelectItem(item);
-          setShowTooltip((v) => !v);
-        }}
+        onClick={handleClick}
         onMouseEnter={handleOpen}
         onMouseLeave={handleClose}
         onFocus={handleOpen}
-        onBlur={handleClose}
+        onBlur={handleBlur}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
           isActive
             ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30'

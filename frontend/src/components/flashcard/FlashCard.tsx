@@ -50,7 +50,7 @@ export function FlashCard({
             onFlip();
           }
         }}
-        className="relative h-[260px] w-full sm:h-[280px] sm:rounded-[22px] md:h-[280px] md:rounded-[24px] rounded-[20px]"
+        className="relative h-[300px] w-full sm:h-[280px] sm:rounded-[22px] md:h-[280px] md:rounded-[24px] rounded-[20px]"
         style={{ transformStyle: 'preserve-3d', perspective: PERSPECTIVE }}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{

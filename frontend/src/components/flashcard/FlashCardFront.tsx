@@ -28,8 +28,8 @@ export function FlashCardFront({ card, cardNumber, total }: FlashCardFrontProps)
         </div>
       </div>
       <div className="flex shrink-0 items-center justify-between border-t border-[#1E3A8A]/10 pt-3 dark:border-white/10">
-        <span className="text-[12px] text-[#CBD5E1] dark:text-[#94A3B8] md:text-sm">
-          Card {cardNumber}/{total}
+        <span className="inline-flex items-center rounded-full border border-[#1E3A8A]/25 bg-[#1E3A8A]/10 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#1E3A8A] shadow-sm dark:border-[#38BDF8]/30 dark:bg-[#38BDF8]/15 dark:text-[#7DD3FC] md:text-xs">
+          {cardNumber}/{total}
         </span>
         <span className="rounded-md bg-[#1E3A8A]/10 px-2 py-0.5 text-[12px] font-medium text-[#1E3A8A] dark:bg-[#38BDF8]/20 dark:text-[#38BDF8] md:text-sm">
           +10 XP

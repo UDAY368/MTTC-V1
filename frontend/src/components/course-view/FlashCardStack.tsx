@@ -140,7 +140,7 @@ export function FlashCardStack({ title, cards, progressBarLeftContent }: FlashCa
       />
 
       {/* Card stack — flex row: [Left arrow] [Card] [Right arrow] so arrows sit beside card */}
-      <div className="relative w-full flex-1 min-h-[260px] touch-none select-none flex items-center justify-center gap-2 py-1 md:py-4 md:gap-3 md:px-2">
+      <div className="relative w-full flex-1 min-h-[300px] sm:min-h-[260px] md:min-h-[260px] touch-none select-none flex items-center justify-center gap-2 py-1 md:py-4 md:gap-3 md:px-2">
         {/* Left arrow — previous card; in flow beside card, vertically centered */}
         <motion.button
           type="button"
@@ -161,7 +161,7 @@ export function FlashCardStack({ title, cards, progressBarLeftContent }: FlashCa
         </motion.button>
 
         {/* Center: deck behind + current card (same DOM path as card container) */}
-        <div className="relative flex-1 min-w-0 flex items-center justify-center px-1 md:px-2 self-stretch min-h-[260px]">
+        <div className="relative flex-1 min-w-0 flex items-center justify-center px-1 md:px-2 self-stretch min-h-[300px] sm:min-h-[260px] md:min-h-[260px]">
           {/* Deck behind — stacked card look */}
           {cards.slice(currentIndex + 1, currentIndex + 3).map((card, stackIndex) => (
             <motion.div
@@ -175,7 +175,7 @@ export function FlashCardStack({ title, cards, progressBarLeftContent }: FlashCa
               }}
             >
               <div
-                className="w-full max-w-[328px] sm:max-w-[360px] md:max-w-[420px] h-[260px] sm:h-[280px] md:h-[280px] rounded-[20px] sm:rounded-[22px] md:rounded-[24px] border border-border/80 bg-gradient-to-br from-card via-muted/30 to-muted/50 shadow-lg"
+                className="w-full max-w-[328px] sm:max-w-[360px] md:max-w-[420px] h-[300px] sm:h-[280px] md:h-[280px] rounded-[20px] sm:rounded-[22px] md:rounded-[24px] border border-border/80 bg-gradient-to-br from-card via-muted/30 to-muted/50 shadow-lg"
                 style={{
                   boxShadow: `0 ${4 + stackIndex * 6}px ${12 + stackIndex * 8}px -4px rgba(0,0,0,0.15), 0 ${2 + stackIndex * 4}px ${4 + stackIndex * 4}px -2px rgba(0,0,0,0.08)`,
                 }}
