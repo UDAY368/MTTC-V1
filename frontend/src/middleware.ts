@@ -7,13 +7,14 @@ export function middleware(request: NextRequest) {
   const isRoot = pathname === '/';
   const isLoginPage = pathname === '/login';
   const isQuizPage = pathname.startsWith('/quiz/');
+  const isFlashPage = pathname.startsWith('/flash/');
   const isHomePage = pathname === '/home';
   const isCoursePage = pathname.startsWith('/course/');
   // Root and /home are the public landing; /login is admin-only (reached only by typing /login or from protected route)
-  const isPublicPage = isRoot || isLoginPage || isQuizPage || isHomePage || isCoursePage;
+  const isPublicPage = isRoot || isLoginPage || isQuizPage || isFlashPage || isHomePage || isCoursePage;
 
-  // Allow public quiz pages
-  if (isQuizPage) {
+  // Allow public quiz and flash deck pages (no admin login required)
+  if (isQuizPage || isFlashPage) {
     return NextResponse.next();
   }
 
