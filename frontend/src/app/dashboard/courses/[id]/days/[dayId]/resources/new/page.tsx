@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
@@ -10,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Loader2, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Loader2, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { QuizResourceAttachView } from '@/components/quiz/QuizResourceAttachView';
 
-type ResourceType = 'VIDEO' | 'NOTES' | 'BRIEF_NOTES' | 'FLASH_CARDS' | 'SHORT_QUESTIONS' | 'ASSIGNMENT' | 'GLOSSARY' | 'RECOMMENDATION';
+type ResourceType = 'VIDEO' | 'NOTES' | 'BRIEF_NOTES' | 'FLASH_CARDS' | 'SHORT_QUESTIONS' | 'ASSIGNMENT' | 'GLOSSARY' | 'RECOMMENDATION' | 'QUIZ';
 
 export default function NewResourcePage() {
   const router = useRouter();
@@ -25,6 +27,13 @@ export default function NewResourcePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // QUIZ: ensure Quiz resource exists, then show attach-quiz page
+  const [quizResourceReady, setQuizResourceReady] = useState(false);
+  const [quizResourceError, setQuizResourceError] = useState('');
+  const [quizResourceLoading, setQuizResourceLoading] = useState(resourceType === 'QUIZ');
+  const [creatingQuizResource, setCreatingQuizResource] = useState(false);
+  const [quizResourceCreatedSuccess, setQuizResourceCreatedSuccess] = useState(false);
 
   // Common fields
   const [title, setTitle] = useState('');
@@ -285,6 +294,51 @@ export default function NewResourcePage() {
     setCollapsedRecommendations(newCollapsed);
   };
 
+  // QUIZ: ensure Quiz resource exists for this day, then show attach-quiz UI
+  useEffect(() => {
+    if (resourceType !== 'QUIZ') return;
+    let cancelled = false;
+    (async () => {
+      setQuizResourceLoading(true);
+      setQuizResourceError('');
+      try {
+        const res = await api.get(`/resources?dayId=${dayId}`);
+        const resources = res.data?.data ?? [];
+        const hasQuiz = resources.some((r: { type: string }) => r.type === 'QUIZ');
+        if (hasQuiz) {
+          if (!cancelled) setQuizResourceReady(true);
+          return;
+        }
+        await api.post('/resources', { dayId, type: 'QUIZ' });
+        if (!cancelled) setQuizResourceReady(true);
+      } catch (err: any) {
+        if (!cancelled) {
+          setQuizResourceError(err.response?.data?.message || 'Could not create Quiz resource. Ensure migrations are run on the server.');
+        }
+      } finally {
+        if (!cancelled) setQuizResourceLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [resourceType, dayId]);
+
+  const createQuizResource = async () => {
+    setCreatingQuizResource(true);
+    setQuizResourceError('');
+    setQuizResourceCreatedSuccess(false);
+    try {
+      await api.post('/resources', { dayId, type: 'QUIZ' });
+      setQuizResourceReady(true);
+      setQuizResourceError('');
+      setQuizResourceCreatedSuccess(true);
+      setTimeout(() => setQuizResourceCreatedSuccess(false), 4000);
+    } catch (err: any) {
+      setQuizResourceError(err.response?.data?.message || 'Could not create Quiz resource. Run migrations and try again.');
+    } finally {
+      setCreatingQuizResource(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -391,6 +445,71 @@ export default function NewResourcePage() {
       setLoading(false);
     }
   };
+
+  // QUIZ: full-page attach-quiz UI (like other resource types open a page)
+  if (resourceType === 'QUIZ') {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" asChild className="mb-4">
+          <Link href={`/dashboard/courses/${courseId}/days/${dayId}`}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to day
+          </Link>
+        </Button>
+        <Card className="max-w-3xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Quiz Resource
+            </CardTitle>
+            <CardDescription>
+              Add and manage quizzes for this day. Use “New Quiz” to create a quiz; it will be linked to this day.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {quizResourceLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                {quizResourceCreatedSuccess && (
+                  <div className="mb-6 p-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Quiz resource created successfully. You can now add quizzes for this day below.</p>
+                  </div>
+                )}
+                <QuizResourceAttachView
+                  dayId={dayId}
+                  courseId={courseId}
+                  children={
+                    <div className="border-t pt-4 mt-6 flex justify-between items-center">
+                      <Button
+                        type="button"
+                        onClick={createQuizResource}
+                        disabled={creatingQuizResource}
+                      >
+                        {creatingQuizResource ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating…
+                          </>
+                        ) : (
+                          'Create Resource'
+                        )}
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link href={`/dashboard/courses/${courseId}/days/${dayId}`}>Back to day</Link>
+                      </Button>
+                    </div>
+                  }
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -19,6 +19,7 @@ interface ContentViewerProps {
   selectedItem: DayItem | null;
   currentItems: DayItem[];
   onSelectItem: (item: DayItem | null) => void;
+  selectedDay?: { dayQuizzes: import('./types').LearnDayQuiz[] };
   selectedDayNumber?: number;
 }
 
@@ -32,6 +33,7 @@ function ResourceTypeLabel(type: string): string {
     ASSIGNMENT: 'Assignment',
     GLOSSARY: 'Glossary',
     RECOMMENDATION: 'Recommendation',
+    QUIZ: 'Quiz',
   };
   return map[type] ?? type;
 }
@@ -40,10 +42,12 @@ function ResourceContent({
   item,
   currentItems = [],
   selectedDayNumber,
+  dayQuizzesForQuizResource,
 }: {
   item: DayItem;
   currentItems?: DayItem[];
   selectedDayNumber?: number;
+  dayQuizzesForQuizResource?: import('./types').LearnDayQuiz[];
 }) {
   const [collapsedNotes, setCollapsedNotes] = useState<Set<string>>(new Set());
   const [collapsedShort, setCollapsedShort] = useState<Set<string>>(new Set());
@@ -78,6 +82,92 @@ function ResourceContent({
       return next;
     });
   };
+
+  // Quiz resource: one "Quiz" item; show all day quizzes from dayQuizzesForQuizResource
+  const isQuizResource = item.type === 'resource' && item.resource.type === 'QUIZ';
+  const dayQuizzes = dayQuizzesForQuizResource ?? [];
+  if (isQuizResource && dayQuizzes.length > 0) {
+    const quizUrl = (dq: (typeof dayQuizzes)[0]) => `/quiz/${dq.quiz.uniqueUrl}`;
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {dayQuizzes.map((dq, index) => {
+            const q = dq.quiz;
+            return (
+              <motion.div
+                key={dq.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.06 }}
+                className="group"
+              >
+                <Card className="relative h-full overflow-hidden border-border/60 bg-card shadow-md transition-all duration-300 hover:shadow-lg hover:border-primary/20 dark:bg-card/95">
+                  {selectedDayNumber != null && (
+                    <span
+                      className="absolute top-2.5 right-2.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm ring-1 ring-primary/30 sm:top-3 sm:right-3 sm:px-2.5 sm:py-1 sm:text-xs lg:top-3.5 lg:right-3.5 lg:px-3 lg:py-1.5 lg:text-sm"
+                      aria-label={`Day ${selectedDayNumber}`}
+                    >
+                      Day {selectedDayNumber}
+                    </span>
+                  )}
+                  <CardContent className="flex flex-col gap-2.5 p-4 sm:gap-3 sm:p-5 lg:gap-4 lg:p-6">
+                    <div className="flex flex-1 flex-col gap-1 sm:gap-1.5 lg:gap-2">
+                      <h3 className="text-sm font-semibold leading-tight text-foreground pr-14 sm:text-base sm:pr-16 md:text-lg lg:text-xl lg:pr-20">
+                        {q.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground sm:text-sm lg:text-base">Quiz for this day.</p>
+                      {((q.questionCount ?? 0) > 0 || (q.durationMinutes ?? 0) > 0) && (
+                        <div className="rounded-lg border border-border/50 bg-muted/30 px-2.5 py-2 ring-1 ring-black/[0.03] dark:ring-white/[0.06] sm:rounded-xl sm:px-3 sm:py-2.5 lg:px-4 lg:py-3">
+                          <div className="flex flex-col gap-0.5 sm:gap-1 lg:gap-1.5">
+                            {(q.questionCount ?? 0) > 0 && (
+                              <div className="flex items-baseline gap-1 sm:gap-1.5 lg:gap-2">
+                                <span className="text-base font-bold tabular-nums text-primary sm:text-lg md:text-xl lg:text-2xl">
+                                  {q.questionCount}
+                                </span>
+                                <span className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
+                                  {(q.questionCount ?? 0) === 1 ? 'Question' : 'Questions'}
+                                </span>
+                              </div>
+                            )}
+                            {(q.durationMinutes ?? 0) > 0 && (
+                              <div className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
+                                {q.durationMinutes} Min
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-2.5">
+                      <Link
+                        href={quizUrl(dq)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
+                      >
+                        Open Quiz
+                      </Link>
+                      <Link
+                        href={quizUrl(dq)}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm transition-all duration-200 hover:bg-muted/60 hover:border-primary/30 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
+                      >
+                        Retake Quiz
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  if (isQuizResource && dayQuizzes.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center text-muted-foreground">
+        <p className="text-sm">No quizzes attached yet for this day.</p>
+      </div>
+    );
+  }
 
   if (item.type === 'dayQuiz') {
     const quizItems = currentItems.filter((i): i is typeof item => i.type === 'dayQuiz');
@@ -487,6 +577,7 @@ export function ContentViewer({
   selectedItem,
   currentItems,
   onSelectItem,
+  selectedDay,
   selectedDayNumber,
 }: ContentViewerProps) {
   const idx = selectedItem ? currentItems.findIndex((i) => i.id === selectedItem.id && i.type === selectedItem.type) : -1;
@@ -528,6 +619,11 @@ export function ContentViewer({
                 item={selectedItem}
                 currentItems={currentItems}
                 selectedDayNumber={selectedDayNumber}
+                dayQuizzesForQuizResource={
+                  selectedItem.type === 'resource' && selectedItem.resource.type === 'QUIZ'
+                    ? selectedDay?.dayQuizzes
+                    : undefined
+                }
               />
             </motion.div>
           ) : (

@@ -242,6 +242,19 @@ export const createResource = async (req, res, next) => {
       });
     }
 
+    // QUIZ: only one Quiz resource per day
+    if (type === 'QUIZ') {
+      const existingQuiz = await prisma.resource.findFirst({
+        where: { dayId, type: 'QUIZ' },
+      });
+      if (existingQuiz) {
+        return res.status(400).json({
+          success: false,
+          message: 'This day already has a Quiz resource. Only one Quiz resource per day is allowed.',
+        });
+      }
+    }
+
     // Get the highest order value for this day
     const lastResource = await prisma.resource.findFirst({
       where: { dayId },
@@ -379,6 +392,14 @@ export const createResource = async (req, res, next) => {
       data: resource,
     });
   } catch (error) {
+    // QUIZ creation: return 400 with clear message for any error (usually missing QUIZ enum — migrations not run)
+    if (type === 'QUIZ') {
+      console.error('[createResource] QUIZ create failed:', error.code, error.message, error.meta || '');
+      return res.status(400).json({
+        success: false,
+        message: 'Could not create Quiz resource. Run database migrations on the server: npx prisma migrate deploy',
+      });
+    }
     next(error);
   }
 };
@@ -686,6 +707,24 @@ export const updateResource = async (req, res, next) => {
 export const deleteResource = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    const resource = await prisma.resource.findUnique({
+      where: { id },
+    });
+
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: 'Resource not found',
+      });
+    }
+
+    // When deleting a QUIZ resource, remove all day quizzes for this day
+    if (resource.type === 'QUIZ') {
+      await prisma.dayQuiz.deleteMany({
+        where: { dayId: resource.dayId },
+      });
+    }
 
     await prisma.resource.delete({
       where: { id },

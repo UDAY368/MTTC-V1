@@ -223,12 +223,12 @@ enum ResourceType {
   VIDEO           // Video URL (YouTube/Vimeo/external)
   NOTES           // Multiple paragraphs with headings (Key Points Notes)
   BRIEF_NOTES     // Brief notes: single rich text (blog-style, no paragraphs)
-  FLASH_CARDS     // Flip cards (question/answer pairs)
+  FLASH_CARDS    // Flip cards (question/answer pairs)
   SHORT_QUESTIONS // Q&A pairs
   ASSIGNMENT      // Assignment question
   GLOSSARY        // Glossary words and meanings
   RECOMMENDATION  // Multiple recommendations (title + content)
-  // Note: QUIZZES are handled separately via DayQuiz junction table (not a Resource type)
+  QUIZ            // Single "Quiz" container per day; actual quizzes via DayQuiz
 }
 
 // Resource represents any content item within a Day

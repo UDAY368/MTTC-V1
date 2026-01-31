@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -32,8 +32,12 @@ interface Question {
 
 export default function NewQuizPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const dayIdFromQuery = searchParams.get('dayId') ?? '';
+  const courseIdFromQuery = searchParams.get('courseId') ?? '';
+
   const [courses, setCourses] = useState<Course[]>([]);
-  const [courseId, setCourseId] = useState('');
+  const [courseId, setCourseId] = useState(courseIdFromQuery);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [totalQuestionsInput, setTotalQuestionsInput] = useState('');
@@ -62,6 +66,10 @@ export default function NewQuizPage() {
   useEffect(() => {
     fetchCourses();
   }, []);
+
+  useEffect(() => {
+    if (courseIdFromQuery && !courseId) setCourseId(courseIdFromQuery);
+  }, [courseIdFromQuery, courseId]);
 
   const fetchCourses = async () => {
     try {
@@ -295,13 +303,21 @@ export default function NewQuizPage() {
         });
       }
 
+      // If opened from a day's Quiz resource, link this quiz to that day
+      if (dayIdFromQuery) {
+        await api.post('/day-quizzes', { dayId: dayIdFromQuery, quizId });
+      }
+
       // Show success animation
       setShowSuccess(true);
       setLoading(false);
-      
-      // Redirect after animation
+
+      // Redirect: back to day's Quiz resource if we came from there, else quizzes list
+      const redirectUrl = dayIdFromQuery && courseId
+        ? `/dashboard/courses/${courseId}/days/${dayIdFromQuery}/resources/new?type=QUIZ`
+        : '/dashboard/quizzes';
       setTimeout(() => {
-        router.push('/dashboard/quizzes');
+        router.push(redirectUrl);
       }, 2000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred');
@@ -328,16 +344,27 @@ export default function NewQuizPage() {
     );
   }
 
+  const fromDayContext = Boolean(dayIdFromQuery && courseIdFromQuery);
+  const backUrl = fromDayContext && courseId
+    ? `/dashboard/courses/${courseId}/days/${dayIdFromQuery}/resources/new?type=QUIZ`
+    : '/dashboard/quizzes';
+
   return (
     <div className="space-y-6">
       <Button
         variant="ghost"
-        onClick={() => router.back()}
+        onClick={() => router.push(backUrl)}
         className="mb-4"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
+
+      {fromDayContext && (
+        <p className="text-sm text-muted-foreground -mt-2">
+          This quiz will be added to the current day’s Quiz resource.
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <motion.div
@@ -359,7 +386,7 @@ export default function NewQuizPage() {
                   value={courseId}
                   onChange={(e) => setCourseId(e.target.value)}
                   required
-                  disabled={loading}
+                  disabled={loading || fromDayContext}
                 >
                   <option value="">Select a course</option>
                   {courses.map((course) => (
@@ -368,6 +395,9 @@ export default function NewQuizPage() {
                     </option>
                   ))}
                 </Select>
+                {fromDayContext && (
+                  <p className="text-xs text-muted-foreground">Course is set from the day you’re adding this quiz to.</p>
+                )}
               </div>
 
               <div className="space-y-2">

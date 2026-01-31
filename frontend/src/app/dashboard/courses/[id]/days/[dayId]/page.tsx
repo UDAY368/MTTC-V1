@@ -21,8 +21,11 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import api from '@/lib/api';
+import { QuizPreviewModal } from '@/components/quiz/QuizPreviewModal';
+import { QuizResourceAttachView } from '@/components/quiz/QuizResourceAttachView';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, 
   Plus, 
@@ -44,7 +47,8 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
-  Lightbulb
+  Lightbulb,
+  Search
 } from 'lucide-react';
 
 interface Day {
@@ -61,7 +65,7 @@ interface Day {
 
 interface Resource {
   id: string;
-  type: 'VIDEO' | 'NOTES' | 'BRIEF_NOTES' | 'FLASH_CARDS' | 'SHORT_QUESTIONS' | 'ASSIGNMENT' | 'GLOSSARY' | 'RECOMMENDATION';
+  type: 'VIDEO' | 'NOTES' | 'BRIEF_NOTES' | 'FLASH_CARDS' | 'SHORT_QUESTIONS' | 'ASSIGNMENT' | 'GLOSSARY' | 'RECOMMENDATION' | 'QUIZ';
   title?: string;
   order: number;
   isVisible: boolean;
@@ -262,35 +266,16 @@ export default function DayDetailPage() {
 
     if (activeId === overId) return;
 
-    const activeIndex = allItems.findIndex(
-      item => (item.type === 'resource' ? item.data.id : `quiz-${item.data.id}`) === activeId
-    );
-    const overIndex = allItems.findIndex(
-      item => (item.type === 'resource' ? item.data.id : `quiz-${item.data.id}`) === overId
-    );
+    const activeIndex = allItems.findIndex(item => item.data.id === activeId);
+    const overIndex = allItems.findIndex(item => item.data.id === overId);
 
     if (activeIndex === -1 || overIndex === -1) return;
 
-    // Reorder full list (resources + quizzes) – any item can move to any position
     const newItems = arrayMove(allItems, activeIndex, overIndex);
+    const itemsPayload = newItems.map((item) => ({ type: 'resource' as const, id: item.data.id }));
+    const reorderedResources = newItems.map((item, i) => ({ ...item.data, order: i + 1 })) as Resource[];
 
-    // Build payload and optimistic state: assign global order 1, 2, 3, ...
-    const itemsPayload = newItems.map((item) => ({
-      type: item.type === 'resource' ? ('resource' as const) : ('dayQuiz' as const),
-      id: item.data.id,
-    }));
-    const reorderedResources = newItems
-      .filter((item): item is typeof item & { type: 'resource' } => item.type === 'resource')
-      .map((item) => ({ ...item.data, order: newItems.indexOf(item) + 1 })) as Resource[];
-    const reorderedQuizzes = newItems
-      .filter((item): item is typeof item & { type: 'quiz' } => item.type === 'quiz')
-      .map((item) => ({ ...item.data, order: newItems.indexOf(item) + 1 })) as DayQuiz[];
-
-    setDay(prev =>
-      prev
-        ? { ...prev, resources: reorderedResources, dayQuizzes: reorderedQuizzes }
-        : null
-    );
+    setDay(prev => (prev ? { ...prev, resources: reorderedResources } : null));
 
     api
       .put(`/days/${dayId}/reorder-items`, { items: itemsPayload })
@@ -319,6 +304,8 @@ export default function DayDetailPage() {
         return <BookOpen className="h-5 w-5" />;
       case 'RECOMMENDATION':
         return <Lightbulb className="h-5 w-5" />;
+      case 'QUIZ':
+        return <BookOpen className="h-5 w-5" />;
     }
   };
 
@@ -340,6 +327,8 @@ export default function DayDetailPage() {
         return 'Glossary';
       case 'RECOMMENDATION':
         return 'Recommendation';
+      case 'QUIZ':
+        return 'Quiz';
     }
   };
 
@@ -370,20 +359,16 @@ export default function DayDetailPage() {
     );
   }
 
-  // Combine resources and quizzes, sorted by order
-  const allItems = [
-    ...day.resources.map(r => ({ type: 'resource' as const, data: r })),
-    ...day.dayQuizzes.map(q => ({ type: 'quiz' as const, data: q }))
-  ].sort((a, b) => {
-    const orderA = a.type === 'resource' ? a.data.order : a.data.order;
-    const orderB = b.type === 'resource' ? b.data.order : b.data.order;
-    return orderA - orderB;
-  });
+  // Only resources (Quiz is one resource; day quizzes are managed inside it)
+  const allItems = [...day.resources]
+    .sort((a, b) => a.order - b.order)
+    .map(r => ({ type: 'resource' as const, data: r }));
 
-  // SortableItem component for drag and drop
+  // SortableItem component for drag and drop (resources only; Quiz is one resource)
   interface SortableItemProps {
     item: typeof allItems[0];
     index: number;
+    day: Day;
     getResourceIcon: (type: Resource['type']) => React.ReactNode;
     getResourceTypeLabel: (type: Resource['type']) => string;
     onPreview: (item: typeof allItems[0]) => void;
@@ -392,8 +377,8 @@ export default function DayDetailPage() {
     onDelete: (item: typeof allItems[0]) => void;
   }
 
-  function SortableItem({ item, index, getResourceIcon, getResourceTypeLabel, onPreview, onToggleVisibility, onEdit, onDelete }: SortableItemProps) {
-    const itemId = item.type === 'resource' ? item.data.id : `quiz-${item.data.id}`;
+  function SortableItem({ item, index, day, getResourceIcon, getResourceTypeLabel, onPreview, onToggleVisibility, onEdit, onDelete }: SortableItemProps) {
+    const itemId = item.data.id;
     const {
       attributes,
       listeners,
@@ -429,40 +414,24 @@ export default function DayDetailPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      {item.type === 'resource' ? (
-                        <>
-                          {getResourceIcon(item.data.type)}
-                          <CardTitle className="text-lg">
-                            {item.data.title || getResourceTypeLabel(item.data.type)}
-                          </CardTitle>
-                        </>
-                      ) : (
-                        <>
-                          <BookOpen className="h-5 w-5" />
-                          <CardTitle className="text-lg">
-                            {item.data.quiz.title}
-                          </CardTitle>
-                        </>
-                      )}
+                      {getResourceIcon(item.data.type)}
+                      <CardTitle className="text-lg">
+                        {item.data.type === 'QUIZ' ? 'Quiz' : (item.data.title || getResourceTypeLabel(item.data.type))}
+                      </CardTitle>
                       {!item.data.isVisible && (
                         <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
                           Hidden
                         </span>
                       )}
                     </div>
-                    {item.type === 'resource' && (
-                      <CardDescription className="mt-1">
-                        {getResourceTypeLabel(item.data.type)}
-                        {item.data.type === 'VIDEO' && item.data.videoUrl && (
-                          <span className="ml-2 text-xs">• {item.data.videoUrl}</span>
-                        )}
-                      </CardDescription>
-                    )}
-                    {item.type === 'quiz' && (
-                      <CardDescription className="mt-1">
-                        Quiz • {item.data.quiz.durationMinutes} minutes
-                      </CardDescription>
-                    )}
+                    <CardDescription className="mt-1">
+                      {item.data.type === 'QUIZ'
+                        ? `${day.dayQuizzes.length} quiz${day.dayQuizzes.length === 1 ? '' : 'zes'} attached`
+                        : getResourceTypeLabel(item.data.type)}
+                      {item.data.type === 'VIDEO' && item.data.videoUrl && (
+                        <span className="ml-2 text-xs">• {item.data.videoUrl}</span>
+                      )}
+                    </CardDescription>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -532,13 +501,6 @@ export default function DayDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowAddQuiz(true)}
-          >
-            <BookOpen className="mr-2 h-4 w-4" />
-            Attach Quiz
-          </Button>
           <Button onClick={() => setShowAddResource(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add Resource
@@ -571,45 +533,34 @@ export default function DayDetailPage() {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={allItems.map(item => item.type === 'resource' ? item.data.id : `quiz-${item.data.id}`)}
+            items={allItems.map(item => item.data.id)}
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-3">
               {allItems.map((item, index) => (
                 <SortableItem
-                  key={item.type === 'resource' ? item.data.id : `quiz-${item.data.id}`}
+                  key={item.data.id}
                   item={item}
                   index={index}
+                  day={day}
                   getResourceIcon={getResourceIcon}
                   getResourceTypeLabel={getResourceTypeLabel}
-                  onPreview={(item) => {
-                    if (item.type === 'resource') {
-                      setPreviewResource(item.data);
-                    } else if (item.type === 'quiz') {
-                      setPreviewQuiz(item.data);
-                    }
-                  }}
-                  onToggleVisibility={(id, isVisible) => {
-                    if (item.type === 'resource') {
-                      handleToggleVisibility(id, isVisible);
+                  onPreview={(it) => {
+                    if (it.data.type === 'QUIZ') {
+                      setShowAddQuiz(true);
                     } else {
-                      handleToggleQuizVisibility(id, isVisible);
+                      setPreviewResource(it.data);
                     }
                   }}
-                  onEdit={(item) => {
-                    if (item.type === 'resource') {
-                      router.push(`/dashboard/courses/${courseId}/days/${dayId}/resources/${item.data.id}/edit`);
+                  onToggleVisibility={(id, isVisible) => handleToggleVisibility(id, isVisible)}
+                  onEdit={(it) => {
+                    if (it.data.type === 'QUIZ') {
+                      setShowAddQuiz(true);
                     } else {
-                      router.push(`/dashboard/quizzes/${item.data.quiz.id}/edit`);
+                      router.push(`/dashboard/courses/${courseId}/days/${dayId}/resources/${it.data.id}/edit`);
                     }
                   }}
-                  onDelete={(item) => {
-                    if (item.type === 'resource') {
-                      handleDeleteResource(item.data);
-                    } else {
-                      handleDeleteQuiz(item.data);
-                    }
-                  }}
+                  onDelete={(it) => handleDeleteResource(it.data)}
                 />
               ))}
             </div>
@@ -632,15 +583,14 @@ export default function DayDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* Add Quiz Modal */}
+      {/* Quiz Resource Modal */}
       <AnimatePresence>
         {showAddQuiz && (
-          <AddQuizModal
+          <QuizResourceModal
             dayId={dayId}
             courseId={courseId}
             onClose={() => setShowAddQuiz(false)}
             onSuccess={() => {
-              setShowAddQuiz(false);
               fetchDay();
             }}
           />
@@ -717,7 +667,9 @@ export default function DayDetailPage() {
                     </p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {deleteConfirm.type === 'resource' 
-                        ? 'This will permanently delete this resource and all its content.'
+                        ? ((deleteConfirm.item as Resource).type === 'QUIZ'
+                          ? 'This will remove the Quiz resource and all attached quizzes from this day.'
+                          : 'This will permanently delete this resource and all its content.')
                         : 'This will remove the quiz from this day. The quiz itself will not be deleted.'
                       }
                     </p>
@@ -777,20 +729,26 @@ function AddResourceModal({ dayId, courseId, onClose, onSuccess }: {
   onSuccess: () => void;
 }) {
   const router = useRouter();
-  
+
+  const handleResourceTypeClick = (type: 'VIDEO' | 'NOTES' | 'BRIEF_NOTES' | 'FLASH_CARDS' | 'SHORT_QUESTIONS' | 'ASSIGNMENT' | 'GLOSSARY' | 'RECOMMENDATION' | 'QUIZ') => {
+    onClose();
+    router.push(`/dashboard/courses/${courseId}/days/${dayId}/resources/new?type=${type}`);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className="bg-card rounded-lg border max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
       >
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Add Resource</CardTitle>
-              <Button variant="ghost" size="icon" onClick={onClose}>
+              <Button type="button" variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -798,50 +756,54 @@ function AddResourceModal({ dayId, courseId, onClose, onSuccess }: {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3">
-              {(['VIDEO', 'NOTES', 'BRIEF_NOTES', 'FLASH_CARDS', 'SHORT_QUESTIONS', 'ASSIGNMENT', 'GLOSSARY', 'RECOMMENDATION'] as const).map((type) => (
-                <Button
-                  key={type}
-                  variant="outline"
-                  className="justify-start h-auto p-4"
-                  onClick={() => {
-                    router.push(`/dashboard/courses/${courseId}/days/${dayId}/resources/new?type=${type}`);
-                    onClose();
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    {type === 'VIDEO' && <Video className="h-5 w-5" />}
-                    {type === 'NOTES' && <FileText className="h-5 w-5" />}
-                    {type === 'BRIEF_NOTES' && <FileText className="h-5 w-5" />}
-                    {type === 'FLASH_CARDS' && <HelpCircle className="h-5 w-5" />}
-                    {type === 'SHORT_QUESTIONS' && <HelpCircle className="h-5 w-5" />}
-                    {type === 'ASSIGNMENT' && <ClipboardList className="h-5 w-5" />}
-                    {type === 'GLOSSARY' && <BookOpen className="h-5 w-5" />}
-                    {type === 'RECOMMENDATION' && <Lightbulb className="h-5 w-5" />}
-                    <div className="text-left">
-                      <div className="font-medium">
-                        {type === 'VIDEO' && 'Video'}
-                        {type === 'NOTES' && 'Key Points'}
-                        {type === 'BRIEF_NOTES' && 'Brief Notes'}
-                        {type === 'FLASH_CARDS' && 'Flash Cards'}
-                        {type === 'SHORT_QUESTIONS' && 'Short Questions'}
-                        {type === 'ASSIGNMENT' && 'Assignment'}
-                        {type === 'GLOSSARY' && 'Glossary'}
-                        {type === 'RECOMMENDATION' && 'Recommendation'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {type === 'VIDEO' && 'Add a video URL (YouTube/Vimeo)'}
-                        {type === 'NOTES' && 'Add key points with multiple paragraphs'}
-                        {type === 'BRIEF_NOTES' && 'Add brief notes with tables and rich formatting'}
-                        {type === 'FLASH_CARDS' && 'Create flip cards (Q&A pairs)'}
-                        {type === 'SHORT_QUESTIONS' && 'Add a simple Q&A pair'}
-                        {type === 'ASSIGNMENT' && 'Add an assignment question'}
-                        {type === 'GLOSSARY' && 'Add words and their meanings'}
-                        {type === 'RECOMMENDATION' && 'Add multiple recommendations (title + content)'}
+              {(['VIDEO', 'NOTES', 'BRIEF_NOTES', 'FLASH_CARDS', 'SHORT_QUESTIONS', 'ASSIGNMENT', 'GLOSSARY', 'RECOMMENDATION', 'QUIZ'] as const).map((type) => {
+                const isQuiz = type === 'QUIZ';
+                return (
+                  <Button
+                    key={type}
+                    type="button"
+                    variant="outline"
+                    className="justify-start h-auto p-4"
+                    onClick={() => handleResourceTypeClick(type)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {type === 'VIDEO' && <Video className="h-5 w-5" />}
+                      {type === 'NOTES' && <FileText className="h-5 w-5" />}
+                      {type === 'BRIEF_NOTES' && <FileText className="h-5 w-5" />}
+                      {type === 'FLASH_CARDS' && <HelpCircle className="h-5 w-5" />}
+                      {type === 'SHORT_QUESTIONS' && <HelpCircle className="h-5 w-5" />}
+                      {type === 'ASSIGNMENT' && <ClipboardList className="h-5 w-5" />}
+                      {type === 'GLOSSARY' && <BookOpen className="h-5 w-5" />}
+                      {type === 'RECOMMENDATION' && <Lightbulb className="h-5 w-5" />}
+                      {type === 'QUIZ' && <BookOpen className="h-5 w-5" />}
+                      <div className="text-left">
+                        <div className="font-medium">
+                          {type === 'VIDEO' && 'Video'}
+                          {type === 'NOTES' && 'Key Points'}
+                          {type === 'BRIEF_NOTES' && 'Brief Notes'}
+                          {type === 'FLASH_CARDS' && 'Flash Cards'}
+                          {type === 'SHORT_QUESTIONS' && 'Short Questions'}
+                          {type === 'ASSIGNMENT' && 'Assignment'}
+                          {type === 'GLOSSARY' && 'Glossary'}
+                          {type === 'RECOMMENDATION' && 'Recommendation'}
+                          {type === 'QUIZ' && 'Quiz'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {type === 'VIDEO' && 'Add a video URL (YouTube/Vimeo)'}
+                          {type === 'NOTES' && 'Add key points with multiple paragraphs'}
+                          {type === 'BRIEF_NOTES' && 'Add brief notes with tables and rich formatting'}
+                          {type === 'FLASH_CARDS' && 'Create flip cards (Q&A pairs)'}
+                          {type === 'SHORT_QUESTIONS' && 'Add a simple Q&A pair'}
+                          {type === 'ASSIGNMENT' && 'Add an assignment question'}
+                          {type === 'GLOSSARY' && 'Add words and their meanings'}
+                          {type === 'RECOMMENDATION' && 'Add multiple recommendations (title + content)'}
+                          {type === 'QUIZ' && 'Add one Quiz resource; attach and manage quizzes inside it'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Button>
-              ))}
+                  </Button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -850,123 +812,44 @@ function AddResourceModal({ dayId, courseId, onClose, onSuccess }: {
   );
 }
 
-// Add Quiz Modal Component
-function AddQuizModal({ dayId, courseId, onClose, onSuccess }: {
+// Quiz Resource Modal — uses shared attach view
+function QuizResourceModal({ dayId, courseId, onClose, onSuccess }: {
   dayId: string;
   courseId: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [quizzes, setQuizzes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedQuizId, setSelectedQuizId] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    fetchQuizzes();
-  }, []);
-
-  const fetchQuizzes = async () => {
-    try {
-      const response = await api.get(`/quizzes?courseId=${courseId}`);
-      setQuizzes(response.data.data || []);
-    } catch (error) {
-      console.error('Error fetching quizzes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedQuizId) return;
-
-    setSubmitting(true);
-    try {
-      await api.post('/day-quizzes', {
-        dayId,
-        quizId: selectedQuizId,
-      });
-      onSuccess();
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to attach quiz');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-card rounded-lg border max-w-md w-full"
+        className="bg-card rounded-xl border shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"
       >
-        <Card>
-          <CardHeader>
+        <Card className="border-0 shadow-none flex flex-col flex-1 min-h-0">
+          <CardHeader className="shrink-0 border-b">
             <div className="flex items-center justify-between">
-              <CardTitle>Attach Quiz</CardTitle>
-              <Button variant="ghost" size="icon" onClick={onClose}>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  Quiz Resource
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Add quizzes to this day. Search and click a quiz to attach. Manage attached quizzes below.
+                </CardDescription>
+              </div>
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <CardDescription>Select a quiz to attach to this day</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {loading ? (
-                <div className="flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : quizzes.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No quizzes available. Create a quiz first.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {quizzes.map((quiz) => (
-                    <label
-                      key={quiz.id}
-                      className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
-                    >
-                      <input
-                        type="radio"
-                        name="quiz"
-                        value={quiz.id}
-                        checked={selectedQuizId === quiz.id}
-                        onChange={(e) => setSelectedQuizId(e.target.value)}
-                        className="w-4 h-4"
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{quiz.title}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {quiz.durationMinutes} minutes
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  className="flex-1"
-                  disabled={submitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={!selectedQuizId || submitting || quizzes.length === 0}
-                >
-                  {submitting ? 'Attaching...' : 'Attach Quiz'}
-                </Button>
+          <CardContent className="flex-1 overflow-y-auto min-h-0">
+            <QuizResourceAttachView dayId={dayId} courseId={courseId} onSuccess={onSuccess}>
+              <div className="shrink-0 border-t p-4 flex justify-end mt-6">
+                <Button onClick={onClose}>Done</Button>
               </div>
-            </form>
+            </QuizResourceAttachView>
           </CardContent>
         </Card>
       </motion.div>
@@ -1566,35 +1449,12 @@ function ResourcePreviewModal({ resource, onClose }: {
   );
 }
 
-// Quiz Preview Modal Component
-interface QuizQuestion {
-  id: string;
-  text: string;
-  textTe?: string;
-  type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
-  options: {
-    id: string;
-    text: string;
-    textTe?: string;
-    isCorrect: boolean;
-    order: number;
-  }[];
-  order: number;
-}
-
-interface QuizData {
-  id: string;
-  title: string;
-  description?: string;
-  durationMinutes: number;
-  questions: QuizQuestion[];
-}
-
-function QuizPreviewModal({ dayQuiz, onClose }: {
+// (QuizPreviewModal is imported from @/components/quiz/QuizPreviewModal — local duplicate removed)
+function _QuizPreviewModalRemoved_unused({ dayQuiz, onClose }: {
   dayQuiz: DayQuiz;
   onClose: () => void;
 }) {
-  const [quiz, setQuiz] = useState<QuizData | null>(null);
+  const [quiz, setQuiz] = useState<{ id: string; title: string; description?: string; durationMinutes: number; questions: unknown[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 

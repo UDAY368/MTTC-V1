@@ -8,7 +8,6 @@ import { authService, Admin } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { 
   BookOpen, 
-  FileText, 
   LogOut, 
   Menu,
   X,
@@ -85,7 +84,6 @@ export default function DashboardLayout({
   const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/dashboard/courses', label: 'Courses', icon: BookOpen },
-    { href: '/dashboard/quizzes', label: 'Quizzes', icon: FileText },
   ];
 
   return (

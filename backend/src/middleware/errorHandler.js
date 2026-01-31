@@ -48,8 +48,27 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Other Prisma errors (schema, raw query, etc.) — return 500 with generic message, log real error
+  // Prisma/DB: invalid enum (e.g. QUIZ not in ResourceType — migrations not run on production)
+  const rawMsg = err.message || err.cause?.message || '';
+  const msg = rawMsg.toLowerCase();
+  if (msg.includes('invalid input value for enum') || msg.includes('enum') && (msg.includes('invalid') || msg.includes('unknown'))) {
+    console.error('[Prisma] Schema/enum mismatch. Run migrations: npx prisma migrate deploy', rawMsg);
+    return res.status(400).json({
+      success: false,
+      message: 'Resource type not available in database. Run migrations on the server: npx prisma migrate deploy',
+    });
+  }
+
+  // Other Prisma errors: if this was a QUIZ resource create, return 400 with migrations message (not 500)
   if (err.code && String(err.code).startsWith('P')) {
+    const isQuizResourceCreate = req.method === 'POST' && req.originalUrl?.includes('/api/resources') && req.body?.type === 'QUIZ';
+    if (isQuizResourceCreate) {
+      console.error('[Prisma] QUIZ resource create failed:', err.code, err.message, err.meta || '');
+      return res.status(400).json({
+        success: false,
+        message: 'Could not create Quiz resource. Run database migrations on the server: npx prisma migrate deploy',
+      });
+    }
     console.error('[Prisma]', err.code, err.message, err.meta || '');
     return res.status(500).json({
       success: false,
@@ -63,6 +82,18 @@ export const errorHandler = (err, req, res, next) => {
       success: false,
       message: 'Validation error',
       errors: err.errors,
+    });
+  }
+
+  // Catch-all: if we're about to return 500 for a QUIZ resource create, return 400 with migrations message instead
+  const isQuizCreate = req.method === 'POST' &&
+    (req.originalUrl === '/api/resources' || req.originalUrl?.includes('/api/resources')) &&
+    (req.body?.type === 'QUIZ' || String(req.body?.type || '').toUpperCase() === 'QUIZ');
+  if (status >= 500 && isQuizCreate) {
+    console.error('[Error] QUIZ resource create failed (converting 500→400):', err.message || err, err.code || '');
+    return res.status(400).json({
+      success: false,
+      message: 'Could not create Quiz resource. Run database migrations on the server: npx prisma migrate deploy',
     });
   }
 

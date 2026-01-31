@@ -28,40 +28,35 @@ function ensureSSLParams(url) {
   return `${url}${separator}sslmode=${sslMode}`;
 }
 
-// Set DATABASE_URL with priority: DATABASE_PUBLIC_URL > DATABASE_URL > constructed from DB_* variables
-if (!process.env.DATABASE_URL) {
-  // Priority 1: Use DATABASE_PUBLIC_URL if available
-  if (process.env.DATABASE_PUBLIC_URL) {
-    process.env.DATABASE_URL = ensureSSLParams(process.env.DATABASE_PUBLIC_URL);
-    console.log('✅ DATABASE_URL set from DATABASE_PUBLIC_URL');
-  }
-  // Priority 2: Construct from separate DB variables
-  else if (process.env.DB_HOST) {
-    const dbHost = process.env.DB_HOST;
-    const dbPort = process.env.DB_PORT || '5432';
-    const dbName = process.env.DB_NAME;
-    const dbUser = process.env.DB_USER;
-    const dbPassword = process.env.DB_PASSWORD;
+// Set DATABASE_URL: prefer DATABASE_PUBLIC_URL (for local migrations against Railway), then DATABASE_URL, then DB_*
+if (process.env.DATABASE_PUBLIC_URL) {
+  process.env.DATABASE_URL = ensureSSLParams(process.env.DATABASE_PUBLIC_URL);
+  console.log('✅ DATABASE_URL set from DATABASE_PUBLIC_URL (local → Railway)');
+} else if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = ensureSSLParams(process.env.DATABASE_URL);
+  console.log('✅ Using DATABASE_URL from environment');
+} else if (process.env.DB_HOST) {
+  const dbHost = process.env.DB_HOST;
+  const dbPort = process.env.DB_PORT || '5432';
+  const dbName = process.env.DB_NAME;
+  const dbUser = process.env.DB_USER;
+  const dbPassword = process.env.DB_PASSWORD;
 
-    if (dbHost && dbName && dbUser && dbPassword) {
-      let url = `postgresql://${dbUser}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}?schema=public`;
-      process.env.DATABASE_URL = ensureSSLParams(url);
-      console.log('✅ DATABASE_URL constructed from separate DB variables');
-      console.log(`   Host: ${dbHost}:${dbPort}`);
-      console.log(`   Database: ${dbName}`);
-    } else {
-      console.error('❌ Missing DB environment variables');
-      console.error('   Required: DB_HOST, DB_NAME, DB_USER, DB_PASSWORD');
-      process.exit(1);
-    }
+  if (dbHost && dbName && dbUser && dbPassword) {
+    let url = `postgresql://${dbUser}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}?schema=public`;
+    process.env.DATABASE_URL = ensureSSLParams(url);
+    console.log('✅ DATABASE_URL constructed from separate DB variables');
+    console.log(`   Host: ${dbHost}:${dbPort}`);
+    console.log(`   Database: ${dbName}`);
   } else {
-    console.error('❌ No database configuration found');
-    console.error('   Please set either DATABASE_PUBLIC_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD');
+    console.error('❌ Missing DB environment variables');
+    console.error('   Required: DB_HOST, DB_NAME, DB_USER, DB_PASSWORD');
     process.exit(1);
   }
 } else {
-  process.env.DATABASE_URL = ensureSSLParams(process.env.DATABASE_URL);
-  console.log('✅ Using DATABASE_URL from environment');
+  console.error('❌ No database configuration found');
+  console.error('   Set DATABASE_PUBLIC_URL (local → Railway), DATABASE_URL, or DB_* variables');
+  process.exit(1);
 }
 
 // Export for use in other scripts

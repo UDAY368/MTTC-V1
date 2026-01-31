@@ -194,6 +194,8 @@ If the database is empty and you have not run migrations yet:
 2. **Start Command:** `npm run start:deploy` so migrations run on each deploy.
 3. **Logs:** On startup you’ll see "✅ Database connected" or "❌ Database connection failed".
 
+**Troubleshooting — 500 when adding Quiz resource:** If you get 500 or "Internal server error" when adding a Quiz resource, the DB is missing the `QUIZ` enum. Set Start Command to `npm run start:deploy` and redeploy, or run `npm run prisma:migrate:deploy` locally with `DATABASE_URL` pointing at your Railway DB.
+
 ## API Request/Response Examples
 
 ### Admin Login

@@ -15,12 +15,12 @@ export interface CourseViewLayoutProps {
   days: LearnDay[];
 }
 
+// Only resources (Quiz is one resource; day quizzes shown inside it)
 function mergeDayItems(day: LearnDay): DayItem[] {
-  const items: DayItem[] = [
-    ...day.resources.map((r) => ({ type: 'resource' as const, id: r.id, order: r.order, resource: r })),
-    ...day.dayQuizzes.map((q) => ({ type: 'dayQuiz' as const, id: q.id, order: q.order, dayQuiz: q })),
-  ];
-  items.sort((a, b) => a.order - b.order);
+  const items: DayItem[] = day.resources
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((r) => ({ type: 'resource' as const, id: r.id, order: r.order, resource: r }));
   return items;
 }
 
@@ -106,6 +106,7 @@ export function CourseViewLayout({ courseId, courseName, days }: CourseViewLayou
             selectedItem={selectedItem}
             currentItems={currentItems}
             onSelectItem={selectItem}
+            selectedDay={selectedDay}
             selectedDayNumber={selectedDay ? daysWithItems.findIndex((d) => d.id === selectedDay.id) + 1 : undefined}
           />
         </div>
