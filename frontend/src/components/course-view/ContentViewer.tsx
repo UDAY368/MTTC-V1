@@ -353,13 +353,13 @@ function ResourceContent({
     );
   }
 
-  // BRIEF_NOTES: single rich text (blog-style)
+  // BRIEF_NOTES: single rich text (blog-style), book-like bordered box for readability
   if (r.type === 'BRIEF_NOTES' && (r.briefNotesContent != null && r.briefNotesContent !== '')) {
     return (
       <div className="space-y-3">
         <h2 className="text-base font-medium text-foreground sm:text-lg md:text-xl">{title}</h2>
         <div
-          className="text-foreground rich-text-content prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-p:leading-relaxed"
+          className="text-foreground rich-text-content prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-p:leading-relaxed rounded-lg border border-amber-200/70 bg-amber-50/30 px-[10px] pb-5 pt-4 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.04)] sm:px-5 dark:border-amber-900/40 dark:bg-slate-900/40 dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06),0_1px_2px_rgba(0,0,0,0.2)]"
           dangerouslySetInnerHTML={{ __html: r.briefNotesContent }}
         />
       </div>
