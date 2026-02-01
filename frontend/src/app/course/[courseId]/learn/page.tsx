@@ -94,6 +94,15 @@ export default function CourseLearnPage() {
       return;
     }
     let cancelled = false;
+    
+    // Track page visit
+    import('@/lib/analytics').then(({ trackPageVisit }) => {
+      trackPageVisit({ 
+        pageUrl: `/course/${courseId}/learn`, 
+        pageType: 'course-learn' 
+      });
+    });
+
     api
       .get<{ success: boolean; data: LearnData }>(`/public/courses/${courseId}/learn`)
       .then((res) => {

@@ -90,6 +90,16 @@ export default function QuizPage() {
   const [userName, setUserName] = useState('');
   const [nameStepDone, setNameStepDone] = useState(false);
 
+  // Track page visit
+  useEffect(() => {
+    import('@/lib/analytics').then(({ trackPageVisit }) => {
+      trackPageVisit({ 
+        pageUrl: `/quiz/${uniqueUrl}`, 
+        pageType: 'quiz' 
+      });
+    });
+  }, [uniqueUrl]);
+
   // Helper function to get localized text
   const getLocalizedText = (item: { text: string; textTe?: string }) => {
     if (selectedLanguage === 'te' && item.textTe) {

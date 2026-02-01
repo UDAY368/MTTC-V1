@@ -12,6 +12,7 @@
     "prisma:generate": "node scripts/prisma-with-env.js generate",
     "prisma:migrate": "node scripts/prisma-with-env.js migrate dev",
     "prisma:migrate:add-flash-decks": "node scripts/prisma-with-env.js migrate dev --name add_flash_card_decks",
+    "prisma:migrate:add-analytics": "node scripts/prisma-with-env.js migrate dev --name add_analytics_tracking && node scripts/prisma-with-env.js generate",
     "prisma:studio": "node scripts/prisma-with-env.js studio",
     "prisma:push": "node scripts/prisma-with-env.js db push",
     "prisma:migrate:deploy": "node scripts/prisma-with-env.js migrate deploy",

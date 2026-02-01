@@ -36,6 +36,16 @@ export default function FlashDeckPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Track page visit
+  useEffect(() => {
+    import('@/lib/analytics').then(({ trackPageVisit }) => {
+      trackPageVisit({ 
+        pageUrl: `/flash/${uniqueUrl}`, 
+        pageType: 'flash' 
+      });
+    });
+  }, [uniqueUrl]);
+
   useEffect(() => {
     if (!uniqueUrl) {
       setLoading(false);

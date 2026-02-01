@@ -19,6 +19,7 @@ import resourceRoutes from './routes/resourceRoutes.js';
 import dayQuizRoutes from './routes/dayQuizRoutes.js';
 import flashCardDeckRoutes from './routes/flashCardDeckRoutes.js';
 import dayFlashCardDeckRoutes from './routes/dayFlashCardDeckRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -64,6 +65,7 @@ app.use('/api/resources', resourceRoutes);
 app.use('/api/day-quizzes', dayQuizRoutes);
 app.use('/api/flash-decks', flashCardDeckRoutes);
 app.use('/api/day-flash-decks', dayFlashCardDeckRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Error handling
 app.use(notFoundHandler);

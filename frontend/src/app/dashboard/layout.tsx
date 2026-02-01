@@ -14,7 +14,8 @@ import {
   Home,
   ChevronLeft,
   Sun,
-  Moon
+  Moon,
+  BarChart3
 } from 'lucide-react';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -83,6 +84,7 @@ export default function DashboardLayout({
 
   const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/dashboard/courses', label: 'Courses', icon: BookOpen },
   ];
 

@@ -44,6 +44,15 @@ export default function AboutCoursePage() {
       return;
     }
     let cancelled = false;
+    
+    // Track page visit
+    import('@/lib/analytics').then(({ trackPageVisit }) => {
+      trackPageVisit({ 
+        pageUrl: `/course/${courseId}`, 
+        pageType: 'course' 
+      });
+    });
+
     api
       .get<{ success: boolean; data: AboutCourseData }>(`/public/courses/${courseId}`)
       .then((res) => {

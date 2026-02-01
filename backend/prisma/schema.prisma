@@ -463,3 +463,25 @@ model DayFlashCardDeck {
   @@index([deckId])
   @@map("day_flash_card_decks")
 }
+
+// ============================================
+// ANALYTICS TRACKING
+// ============================================
+
+// PageVisit tracks every visit to user-facing pages
+model PageVisit {
+  id          String   @id @default(cuid())
+  pageUrl     String   // URL visited (e.g., "/", "/course/123", "/quiz/abc")
+  pageType    String?  // Type of page (home, course, quiz, flash)
+  referrer    String?  // Referrer URL
+  userAgent   String?  // Browser user agent
+  ipAddress   String?  // IP address (anonymized for privacy)
+  sessionId   String?  // Session identifier for tracking unique sessions
+  visitedAt   DateTime @default(now())
+  
+  @@index([visitedAt])
+  @@index([pageType])
+  @@index([sessionId])
+  @@index([pageUrl])
+  @@map("page_visits")
+}

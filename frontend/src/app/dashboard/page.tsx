@@ -4,16 +4,14 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, FileText, Users } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 interface Stats {
   courses: number;
-  quizzes: number;
-  attempts: number;
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<Stats>({ courses: 0, quizzes: 0, attempts: 0 });
+  const [stats, setStats] = useState<Stats>({ courses: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,18 +20,11 @@ export default function DashboardPage() {
 
   const fetchStats = async () => {
     try {
-      const [coursesRes, quizzesRes] = await Promise.all([
-        api.get('/courses'),
-        api.get('/quizzes'),
-      ]);
-
+      const coursesRes = await api.get('/courses');
       const courses = coursesRes.data.data || [];
-      const quizzes = quizzesRes.data.data || [];
 
       setStats({
         courses: courses.length,
-        quizzes: quizzes.length,
-        attempts: 0, // TODO: Add attempts endpoint
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -48,18 +39,6 @@ export default function DashboardPage() {
       value: stats.courses,
       icon: BookOpen,
       description: 'Total courses',
-    },
-    {
-      title: 'Quizzes',
-      value: stats.quizzes,
-      icon: FileText,
-      description: 'Total quizzes',
-    },
-    {
-      title: 'Attempts',
-      value: stats.attempts,
-      icon: Users,
-      description: 'Total quiz attempts',
     },
   ];
 
