@@ -8,7 +8,6 @@ import { usePreventNavigation } from '@/hooks/usePreventNavigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  Clock, 
   CheckCircle2, 
   XCircle, 
   RotateCcw, 
@@ -79,7 +78,6 @@ export default function QuizPage() {
   const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
-  const [timeRemaining, setTimeRemaining] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -107,23 +105,6 @@ export default function QuizPage() {
   // Prevent navigation during quiz
   usePreventNavigation(!!attempt && !submitted);
 
-  useEffect(() => {
-    if (attempt && !submitted) {
-      const interval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000);
-        const remaining = attempt.durationMinutes * 60 - elapsed;
-        
-        if (remaining <= 0) {
-          clearInterval(interval);
-          handleAutoSubmit();
-        } else {
-          setTimeRemaining(remaining);
-        }
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [attempt, submitted]);
 
   const loadQuiz = async () => {
     try {
@@ -141,7 +122,6 @@ export default function QuizPage() {
       const response = await quizApi.post(`/quiz/${uniqueUrl}/start`, { language });
       setAttempt(response.data.data);
       setSelectedLanguage(language);
-      setTimeRemaining(response.data.data.durationMinutes * 60);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to start quiz');
     }
@@ -209,16 +189,6 @@ export default function QuizPage() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleAutoSubmit = async () => {
-    await handleSubmit();
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const isAnswered = (questionId: string) => {
@@ -368,7 +338,6 @@ export default function QuizPage() {
                 <p className="text-muted-foreground text-center">{quiz.description}</p>
               )}
               <div className="text-center space-y-2">
-                <p className="text-foreground">Duration: {quiz.durationMinutes} minutes</p>
                 <p className="text-foreground">Questions: {quiz.questions.length}</p>
               </div>
 
@@ -645,8 +614,30 @@ export default function QuizPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="text-center pt-6 pb-8"
+            className="flex flex-row items-center justify-between gap-4 pt-6 pb-8"
           >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (returnTo) {
+                  const params = new URLSearchParams();
+                  if (dayId) params.set('dayId', dayId);
+                  if (resourceId) params.set('resourceId', resourceId);
+                  const qs = params.toString();
+                  router.push(qs ? `${returnTo}?${qs}` : returnTo);
+                } else if (typeof window !== 'undefined' && window.history.length > 1) {
+                  router.back();
+                } else {
+                  router.push('/');
+                }
+              }}
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary shadow-md shrink-0"
+              aria-label={selectedLanguage === 'en' ? 'Back to previous page' : 'మునుపటి పేజీకి తిరిగి వెళ్ళండి'}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {selectedLanguage === 'en' ? 'Back' : 'వెనుక'}
+            </Button>
             <Button
               onClick={() => {
                 setAttempt(null);
@@ -656,8 +647,8 @@ export default function QuizPage() {
                 setCurrentQuestionIndex(0);
                 setMarkedForReview(new Set());
               }}
-              size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+              size="sm"
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shrink-0"
             >
               <RotateCcw className="mr-2 h-4 w-4" />
               {selectedLanguage === 'en' ? 'Retake Quiz' : 'క్విజ్ మళ్ళీ తీసుకోండి'}
@@ -671,8 +662,6 @@ export default function QuizPage() {
   if (!quiz || !attempt) return null;
 
   const currentQuestion = quiz.questions[currentQuestionIndex];
-  const isLowTime = timeRemaining < 300; // 5 minutes
-  const isCriticalTime = timeRemaining < 120; // 2 minutes
   const progressPercentage = (Object.keys(answers).filter(k => answers[k].length > 0).length / quiz.questions.length) * 100;
 
   return (
@@ -686,68 +675,122 @@ export default function QuizPage() {
         </div>
       </header>
 
-      {/* Confirmation Dialog */}
+      {/* Submit Quiz Confirmation Popup - animated */}
       <AnimatePresence>
         {showConfirmSubmit && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={handleCancelSubmit}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card rounded-lg p-6 max-w-md w-full shadow-xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 10 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md rounded-2xl border border-border/80 bg-card shadow-2xl shadow-black/25 overflow-hidden"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="h-6 w-6 text-yellow-500" />
-                <h3 className="text-lg font-semibold">
-                  {selectedLanguage === 'en' ? 'Submit Quiz?' : 'క్విజ్ సమర్పించాలా?'}
-                </h3>
-              </div>
-              
-              {getUnansweredCount() > 0 && (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-md p-3 mb-4">
-                  <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                    {selectedLanguage === 'en' 
-                      ? `You have ${getUnansweredCount()} unanswered question(s).`
-                      : `మీకు ${getUnansweredCount()} సమాధానం ఇవ్వని ప్రశ్నలు ఉన్నాయి.`}
-                  </p>
-                </div>
-              )}
+              {/* Header accent */}
+              <div className="h-1 w-full bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
+              <div className="p-6 sm:p-8">
+                {/* Icon + Title */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+                  className="flex items-center gap-4 mb-5"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-500/20 ring-2 ring-amber-500/30">
+                    <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {selectedLanguage === 'en' ? 'Submit Quiz?' : 'క్విజ్ సమర్పించాలా?'}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {quiz?.title}
+                    </p>
+                  </div>
+                </motion.div>
 
-              {getMarkedCount() > 0 && (
-                <div className="bg-orange-500/10 border border-orange-500/30 rounded-md p-3 mb-4">
-                  <p className="text-sm text-orange-600 dark:text-orange-400">
-                    {selectedLanguage === 'en'
-                      ? `You have ${getMarkedCount()} question(s) marked for review.`
-                      : `మీకు ${getMarkedCount()} సమీక్ష కోసం గుర్తు పెట్టిన ప్రశ్నలు ఉన్నాయి.`}
-                  </p>
-                </div>
-              )}
-
-              <p className="text-muted-foreground mb-6">
-                {selectedLanguage === 'en'
-                  ? 'Are you sure you want to submit? This action cannot be undone.'
-                  : 'మీరు ఖచ్చితంగా సమర్పించాలనుకుంటున్నారా? ఈ చర్యను రద్దు చేయలేరు.'}
-              </p>
-
-              <div className="flex gap-3 justify-end">
-                <Button variant="outline" onClick={handleCancelSubmit} disabled={submitting}>
-                  {selectedLanguage === 'en' ? 'Cancel' : 'రద్దు'}
-                </Button>
-                <Button onClick={handleFinalSubmit} disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {selectedLanguage === 'en' ? 'Submitting...' : 'సమర్పిస్తోంది...'}
-                    </>
-                  ) : (
-                    selectedLanguage === 'en' ? 'Submit' : 'సమర్పించు'
+                {/* Info summary */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="rounded-xl bg-muted/50 border border-border/60 p-4 mb-5 space-y-2"
+                >
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{selectedLanguage === 'en' ? 'Answered' : 'సమాధానం'}</span>
+                    <span className="font-medium">{quiz!.questions.length - getUnansweredCount()} / {quiz!.questions.length}</span>
+                  </div>
+                  {getUnansweredCount() > 0 && (
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      {selectedLanguage === 'en'
+                        ? `${getUnansweredCount()} unanswered question(s)`
+                        : `${getUnansweredCount()} సమాధానం ఇవ్వని ప్రశ్నలు`}
+                    </p>
                   )}
-                </Button>
+                  {getMarkedCount() > 0 && (
+                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                      {selectedLanguage === 'en'
+                        ? `${getMarkedCount()} marked for review`
+                        : `${getMarkedCount()} సమీక్ష కోసం గుర్తు పెట్టినవి`}
+                    </p>
+                  )}
+                </motion.div>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-sm text-muted-foreground mb-6"
+                >
+                  {selectedLanguage === 'en'
+                    ? 'Once submitted, you won\'t be able to change your answers. Are you ready to submit?'
+                    : 'సమర్పించిన తర్వాత మీ సమాధానాలను మార్చలేరు. సమర్పించడానికి సిద్ధంగా ఉన్నారా?'}
+                </motion.p>
+
+                {/* Yes / No buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25 }}
+                  className="flex gap-3"
+                >
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelSubmit}
+                    disabled={submitting}
+                    className="flex-1"
+                  >
+                    {selectedLanguage === 'en' ? 'No' : 'కాదు'}
+                  </Button>
+                  <Button
+                    onClick={handleFinalSubmit}
+                    disabled={submitting}
+                    className="flex-1"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {selectedLanguage === 'en' ? 'Submitting...' : 'సమర్పిస్తోంది...'}
+                      </>
+                    ) : (
+                      selectedLanguage === 'en' ? 'Yes, Submit' : 'అవును, సమర్పించు'
+                    )}
+                  </Button>
+                </motion.div>
               </div>
             </motion.div>
           </motion.div>
@@ -856,27 +899,6 @@ export default function QuizPage() {
               </p>
             </div>
 
-          {/* Timer */}
-          <motion.div
-            animate={isCriticalTime ? { scale: [1, 1.02, 1] } : {}}
-            transition={{ repeat: isCriticalTime ? Infinity : 0, duration: 1 }}
-            className={`flex items-center gap-2 p-3 rounded-md ${
-              isCriticalTime ? 'bg-red-500/20 border border-red-500' : 
-              isLowTime ? 'bg-yellow-500/20 border border-yellow-500' : 'bg-muted'
-            }`}
-          >
-            <Clock className={`h-4 w-4 ${
-              isCriticalTime ? 'text-red-500' : 
-              isLowTime ? 'text-yellow-500' : 'text-foreground'
-            }`} />
-            <span className={`font-mono text-lg ${
-              isCriticalTime ? 'text-red-500 font-bold' : 
-              isLowTime ? 'text-yellow-500' : 'text-foreground'
-            }`}>
-              {formatTime(timeRemaining)}
-            </span>
-          </motion.div>
-
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
@@ -974,7 +996,7 @@ export default function QuizPage() {
       <main className="flex-1 flex flex-col">
         {/* Mobile/Tablet Top Navigation Panel - Fixed at top */}
         <div className="lg:hidden sticky top-0 z-30 bg-card border-b border-border">
-          {/* Top Row: Name, Title, Timer */}
+          {/* Top Row: Name, Title */}
           <div className="p-3 flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
               {userName && (
@@ -987,25 +1009,6 @@ export default function QuizPage() {
                 {selectedLanguage === 'en' ? 'Language: English' : 'భాష: తెలుగు'}
               </p>
             </div>
-            <motion.div
-              animate={isCriticalTime ? { scale: [1, 1.05, 1] } : {}}
-              transition={{ repeat: isCriticalTime ? Infinity : 0, duration: 1 }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-                isCriticalTime ? 'bg-red-500/20 border border-red-500' : 
-                isLowTime ? 'bg-yellow-500/20 border border-yellow-500' : 'bg-muted'
-              }`}
-            >
-              <Clock className={`h-4 w-4 ${
-                isCriticalTime ? 'text-red-500' : 
-                isLowTime ? 'text-yellow-500' : 'text-foreground'
-              }`} />
-              <span className={`font-mono font-bold ${
-                isCriticalTime ? 'text-red-500' : 
-                isLowTime ? 'text-yellow-500' : 'text-foreground'
-              }`}>
-                {formatTime(timeRemaining)}
-              </span>
-            </motion.div>
           </div>
 
           {/* Progress Bar */}
@@ -1104,8 +1107,8 @@ export default function QuizPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Mobile-only: nav at top of question card */}
-                  <div className="flex md:hidden items-center justify-between gap-2 pb-3 border-b border-border/60">
+                  {/* Nav: Previous | Next (or Submit Quiz on last) - centered, mobile and desktop */}
+                  <div className="flex items-center justify-center gap-2 pb-3 border-b border-border/60">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1116,12 +1119,21 @@ export default function QuizPage() {
                       <ChevronLeft className="h-4 w-4" />
                       <span>{selectedLanguage === 'en' ? 'Previous' : 'మునుపటి'}</span>
                     </Button>
-                    {currentQuestionIndex === quiz.questions.length - 1 ? (
+                    {currentQuestionIndex < quiz.questions.length - 1 ? (
+                      <Button
+                        size="sm"
+                        onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+                        className="flex items-center gap-1 shrink-0"
+                      >
+                        <span>{selectedLanguage === 'en' ? 'Next' : 'తదుపరి'}</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    ) : (
                       <Button
                         size="sm"
                         onClick={handleConfirmSubmit}
                         disabled={submitted || submitting}
-                        className="bg-green-600 hover:bg-green-700 shrink-0"
+                        className="flex items-center gap-1 shrink-0"
                       >
                         {submitting ? (
                           <>
@@ -1129,17 +1141,11 @@ export default function QuizPage() {
                             {selectedLanguage === 'en' ? 'Submitting...' : 'సమర్పిస్తోంది...'}
                           </>
                         ) : (
-                          selectedLanguage === 'en' ? 'Submit Quiz' : 'క్విజ్ సమర్పించండి'
+                          <>
+                            <span>{selectedLanguage === 'en' ? 'Next' : 'తదుపరి'}</span>
+                            <ChevronRight className="h-4 w-4" />
+                          </>
                         )}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => setCurrentQuestionIndex(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))}
-                        className="flex items-center gap-1 shrink-0"
-                      >
-                        <span>{selectedLanguage === 'en' ? 'Next' : 'తదుపరి'}</span>
-                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
@@ -1198,9 +1204,9 @@ export default function QuizPage() {
           </AnimatePresence>
         </div>
 
-        {/* Navigation Footer */}
+        {/* Navigation Footer - centered, same order as in-card nav */}
         <div className="border-t border-border bg-card p-4">
-          <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
+          <div className="max-w-3xl mx-auto flex items-center justify-center gap-2">
             <Button
               variant="outline"
               onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
@@ -1210,37 +1216,33 @@ export default function QuizPage() {
               <ChevronLeft className="h-4 w-4" />
               <span className="hidden sm:inline">{selectedLanguage === 'en' ? 'Previous' : 'మునుపటి'}</span>
             </Button>
-
-            <div className="hidden sm:flex text-sm text-muted-foreground">
-              {quiz.questions.length - getUnansweredCount()} {selectedLanguage === 'en' ? 'of' : '/'} {quiz.questions.length} {selectedLanguage === 'en' ? 'answered' : 'సమాధానాలు'}
-            </div>
-
-            <div className="flex gap-2">
-              {currentQuestionIndex === quiz.questions.length - 1 ? (
-                <Button
-                  onClick={handleConfirmSubmit}
-                  disabled={submitted || submitting}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {selectedLanguage === 'en' ? 'Submitting...' : 'సమర్పిస్తోంది...'}
-                    </>
-                  ) : (
-                    selectedLanguage === 'en' ? 'Submit Quiz' : 'క్విజ్ సమర్పించండి'
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => setCurrentQuestionIndex(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))}
-                  className="flex items-center gap-1"
-                >
-                  <span className="hidden sm:inline">{selectedLanguage === 'en' ? 'Next' : 'తదుపరి'}</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            {currentQuestionIndex < quiz.questions.length - 1 ? (
+              <Button
+                onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+                className="flex items-center gap-1"
+              >
+                <span className="hidden sm:inline">{selectedLanguage === 'en' ? 'Next' : 'తదుపరి'}</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleConfirmSubmit}
+                disabled={submitted || submitting}
+                className="flex items-center gap-1"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {selectedLanguage === 'en' ? 'Submitting...' : 'సమర్పిస్తోంది...'}
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">{selectedLanguage === 'en' ? 'Next' : 'తదుపరి'}</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </main>

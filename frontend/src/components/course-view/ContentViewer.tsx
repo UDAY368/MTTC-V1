@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, BookOpen, ExternalLink, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, ExternalLink, ArrowLeft, ArrowRight, HelpCircle, Layers } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { linkifyText, getEmbedUrl } from './resource-display-utils';
 import type { DayItem } from './types';
@@ -127,65 +127,32 @@ function ResourceContent({
     };
     const quizUrl = (dq: (typeof dayQuizzes)[0]) => buildQuizUrl(dq.quiz.uniqueUrl);
     return (
-      <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {dayQuizzes.map((dq, index) => {
             const q = dq.quiz;
             return (
               <motion.div
                 key={dq.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.06 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.05 }}
+                whileHover={{ scale: 1.04, y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 className="group"
               >
-                <Card className="relative h-full overflow-hidden border-border/60 bg-card shadow-md transition-all duration-300 hover:shadow-lg hover:border-primary/20 dark:bg-card/95">
-                  {selectedDayNumber != null && (
-                    <span
-                      className="absolute top-2.5 right-2.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm ring-1 ring-primary/30 sm:top-3 sm:right-3 sm:px-2.5 sm:py-1 sm:text-xs lg:top-3.5 lg:right-3.5 lg:px-3 lg:py-1.5 lg:text-sm"
-                      aria-label={`Day ${selectedDayNumber}`}
-                    >
-                      Day {selectedDayNumber}
-                    </span>
-                  )}
-                  <CardContent className="flex flex-col gap-2.5 p-4 sm:gap-3 sm:p-5 lg:gap-4 lg:p-6">
-                    <div className="flex flex-1 flex-col gap-1 sm:gap-1.5 lg:gap-2">
-                      <h3 className="text-sm font-semibold leading-tight text-foreground pr-14 sm:text-base sm:pr-16 md:text-lg lg:text-xl lg:pr-20">
-                        {q.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground sm:text-sm lg:text-base">Quiz for this day.</p>
-                      {((q.questionCount ?? 0) > 0 || (q.durationMinutes ?? 0) > 0) && (
-                        <div className="rounded-lg border border-border/50 bg-muted/30 px-2.5 py-2 ring-1 ring-black/[0.03] dark:ring-white/[0.06] sm:rounded-xl sm:px-3 sm:py-2.5 lg:px-4 lg:py-3">
-                          <div className="flex flex-col gap-0.5 sm:gap-1 lg:gap-1.5">
-                            {(q.questionCount ?? 0) > 0 && (
-                              <div className="flex items-baseline gap-1 sm:gap-1.5 lg:gap-2">
-                                <span className="text-base font-bold tabular-nums text-primary sm:text-lg md:text-xl lg:text-2xl">
-                                  {q.questionCount}
-                                </span>
-                                <span className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
-                                  {(q.questionCount ?? 0) === 1 ? 'Question' : 'Questions'}
-                                </span>
-                              </div>
-                            )}
-                            {(q.durationMinutes ?? 0) > 0 && (
-                              <div className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
-                                {q.durationMinutes} Min
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-2.5">
-                      <Link
-                        href={quizUrl(dq)}
-                        className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-5 sm:py-3.5 sm:text-base lg:px-6 lg:py-4 lg:text-lg"
-                      >
-                        Open Quiz
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link
+                  href={quizUrl(dq)}
+                  className="relative flex items-center gap-2 rounded-full border border-border/60 bg-card/95 px-3.5 py-2.5 text-card-foreground shadow-sm ring-1 ring-black/[0.04] transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:ring-primary/20 dark:bg-card/90 dark:ring-white/[0.06] sm:gap-2.5 sm:px-4 sm:py-2.5 md:px-5 md:py-3"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary transition-colors group-hover:bg-primary/25 sm:h-8 sm:w-8">
+                    <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-6 sm:pr-7">
+                    <span className="truncate text-xs font-semibold text-foreground sm:text-sm">{q.title}</span>
+                  </div>
+                  <ArrowRight className="absolute right-2.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-primary sm:right-3 sm:h-4 sm:w-4" strokeWidth={2.5} />
+                </Link>
               </motion.div>
             );
           })}
@@ -220,68 +187,35 @@ function ResourceContent({
     const quizUrl = (quizItem: typeof item) => buildQuizUrl(quizItem.dayQuiz.quiz.uniqueUrl);
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         {quizItems.length > 1 && (
           <h2 className="text-base font-medium text-foreground sm:text-lg md:text-xl">Quizzes for this day</h2>
         )}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {quizzes.map((quizItem, index) => {
             const q = quizItem.dayQuiz.quiz;
             return (
               <motion.div
                 key={quizItem.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.06 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.05 }}
+                whileHover={{ scale: 1.04, y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 className="group"
               >
-                <Card className="relative h-full overflow-hidden border-border/60 bg-card shadow-md transition-all duration-300 hover:shadow-lg hover:border-primary/20 dark:bg-card/95">
-                  {selectedDayNumber != null && (
-                    <span
-                      className="absolute top-2.5 right-2.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm ring-1 ring-primary/30 sm:top-3 sm:right-3 sm:px-2.5 sm:py-1 sm:text-xs lg:top-3.5 lg:right-3.5 lg:px-3 lg:py-1.5 lg:text-sm"
-                      aria-label={`Day ${selectedDayNumber}`}
-                    >
-                      Day {selectedDayNumber}
-                    </span>
-                  )}
-                  <CardContent className="flex flex-col gap-2.5 p-4 sm:gap-3 sm:p-5 lg:gap-4 lg:p-6">
-                    <div className="flex flex-1 flex-col gap-1 sm:gap-1.5 lg:gap-2">
-                      <h3 className="text-sm font-semibold leading-tight text-foreground pr-14 sm:text-base sm:pr-16 md:text-lg lg:text-xl lg:pr-20">
-                        {q.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground sm:text-sm lg:text-base">Quiz for this day.</p>
-                      {((q.questionCount ?? 0) > 0 || (q.durationMinutes ?? 0) > 0) && (
-                        <div className="rounded-lg border border-border/50 bg-muted/30 px-2.5 py-2 ring-1 ring-black/[0.03] dark:ring-white/[0.06] sm:rounded-xl sm:px-3 sm:py-2.5 lg:px-4 lg:py-3">
-                          <div className="flex flex-col gap-0.5 sm:gap-1 lg:gap-1.5">
-                            {(q.questionCount ?? 0) > 0 && (
-                              <div className="flex items-baseline gap-1 sm:gap-1.5 lg:gap-2">
-                                <span className="text-base font-bold tabular-nums text-primary sm:text-lg md:text-xl lg:text-2xl">
-                                  {q.questionCount}
-                                </span>
-                                <span className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
-                                  {(q.questionCount ?? 0) === 1 ? 'Question' : 'Questions'}
-                                </span>
-                              </div>
-                            )}
-                            {(q.durationMinutes ?? 0) > 0 && (
-                              <div className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
-                                {q.durationMinutes} Min
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-2.5">
-                      <Link
-                        href={quizUrl(quizItem)}
-                        className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-5 sm:py-3.5 sm:text-base lg:px-6 lg:py-4 lg:text-lg"
-                      >
-                        Open Quiz
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                <Link
+                  href={quizUrl(quizItem)}
+                  className="relative flex items-center gap-2 rounded-full border border-border/60 bg-card/95 px-3.5 py-2.5 text-card-foreground shadow-sm ring-1 ring-black/[0.04] transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:ring-primary/20 dark:bg-card/90 dark:ring-white/[0.06] sm:gap-2.5 sm:px-4 sm:py-2.5 md:px-5 md:py-3"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary transition-colors group-hover:bg-primary/25 sm:h-8 sm:w-8">
+                    <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-6 sm:pr-7">
+                    <span className="truncate text-xs font-semibold text-foreground sm:text-sm">{q.title}</span>
+                  </div>
+                  <ArrowRight className="absolute right-2.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-primary sm:right-3 sm:h-4 sm:w-4" strokeWidth={2.5} />
+                </Link>
               </motion.div>
             );
           })}
@@ -420,75 +354,55 @@ function ResourceContent({
   const dayFlashCardDecks = dayFlashCardDecksForFlashCardResource ?? [];
   if (isFlashCardResource && dayFlashCardDecks.length > 0) {
     return (
-      <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {dayFlashCardDecks.map((dfd, index) => {
             const deck = dfd.deck;
-            const cardCount = deck.cards?.length ?? 0;
             const baseFlashUrl = `/flash/${deck.uniqueUrl}`;
             const returnTo =
               courseId && selectedDayId && item.type === 'resource'
                 ? `${baseFlashUrl}?returnTo=${encodeURIComponent(`/course/${courseId}/learn`)}&dayId=${encodeURIComponent(selectedDayId)}&resourceId=${encodeURIComponent(item.resource.id)}`
                 : baseFlashUrl;
             const flashUrl = returnTo;
+            const chipContent = (
+              <>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary transition-colors group-hover:bg-primary/25 sm:h-8 sm:w-8">
+                  <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-6 sm:pr-7">
+                  <span className="truncate text-xs font-semibold text-foreground sm:text-sm">{deck.title}</span>
+                </div>
+                <ArrowRight className="absolute right-2.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-primary sm:right-3 sm:h-4 sm:w-4" strokeWidth={2.5} />
+              </>
+            );
             return (
               <motion.div
                 key={dfd.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.06 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.05 }}
+                whileHover={{ scale: 1.04, y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 className="group"
               >
-                <Card className="relative h-full overflow-hidden border-border/60 bg-card shadow-md transition-all duration-300 hover:shadow-lg hover:border-primary/20 dark:bg-card/95">
-                  {selectedDayNumber != null && (
-                    <span
-                      className="absolute top-2.5 right-2.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm ring-1 ring-primary/30 sm:top-3 sm:right-3 sm:px-2.5 sm:py-1 sm:text-xs lg:top-3.5 lg:right-3.5 lg:px-3 lg:py-1.5 lg:text-sm"
-                      aria-label={`Day ${selectedDayNumber}`}
-                    >
-                      Day {selectedDayNumber}
-                    </span>
-                  )}
-                  <CardContent className="flex flex-col gap-2.5 p-4 sm:gap-3 sm:p-5 lg:gap-4 lg:p-6">
-                    <div className="flex flex-1 flex-col gap-1 sm:gap-1.5 lg:gap-2">
-                      <h3 className="text-sm font-semibold leading-tight text-foreground pr-14 sm:text-base sm:pr-16 md:text-lg lg:text-xl lg:pr-20">
-                        {deck.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground sm:text-sm lg:text-base">Flash card deck for this day.</p>
-                      {cardCount > 0 && (
-                        <div className="rounded-lg border border-border/50 bg-muted/30 px-2.5 py-2 ring-1 ring-black/[0.03] dark:ring-white/[0.06] sm:rounded-xl sm:px-3 sm:py-2.5 lg:px-4 lg:py-3">
-                          <div className="flex items-baseline gap-1 sm:gap-1.5 lg:gap-2">
-                            <span className="text-base font-bold tabular-nums text-primary sm:text-lg md:text-xl lg:text-2xl">
-                              {cardCount}
-                            </span>
-                            <span className="text-[11px] font-medium text-muted-foreground sm:text-xs lg:text-sm">
-                              {cardCount === 1 ? 'Card' : 'Cards'}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1.5 sm:gap-2 lg:gap-2.5">
-                      {onOpenFlashDeckInline ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onOpenFlashDeckInline(deck.title, (deck.cards ?? []).map((c) => ({ id: c.id, question: c.question, answer: c.answer, order: c.order })))
-                          }
-                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
-                        >
-                          Open Deck
-                        </button>
-                      ) : (
-                        <Link
-                          href={flashUrl}
-                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5 lg:py-3 lg:text-base"
-                        >
-                          Open Deck
-                        </Link>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                {onOpenFlashDeckInline ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onOpenFlashDeckInline(deck.title, (deck.cards ?? []).map((c) => ({ id: c.id, question: c.question, answer: c.answer, order: c.order })))
+                    }
+                    className="relative flex items-center gap-2 rounded-full border border-border/60 bg-card/95 px-3.5 py-2.5 text-left text-card-foreground shadow-sm ring-1 ring-black/[0.04] transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:ring-primary/20 dark:bg-card/90 dark:ring-white/[0.06] sm:gap-2.5 sm:px-4 sm:py-2.5 md:px-5 md:py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    {chipContent}
+                  </button>
+                ) : (
+                  <Link
+                    href={flashUrl}
+                    className="relative flex items-center gap-2 rounded-full border border-border/60 bg-card/95 px-3.5 py-2.5 text-card-foreground shadow-sm ring-1 ring-black/[0.04] transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:ring-primary/20 dark:bg-card/90 dark:ring-white/[0.06] sm:gap-2.5 sm:px-4 sm:py-2.5 md:px-5 md:py-3"
+                  >
+                    {chipContent}
+                  </Link>
+                )}
               </motion.div>
             );
           })}
@@ -753,22 +667,15 @@ export function ContentViewer({
                   cards={inlineFlashDeck.cards}
                   onBack={() => setInlineFlashDeck(null)}
                   progressBarLeftContent={
-                    <div className="group relative inline-block">
-                      <span
-                        className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-primary/40 bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-lg ring-2 ring-primary/20 transition-opacity duration-200 md:block md:opacity-0 md:group-hover:opacity-100"
-                        aria-hidden
-                      >
-                        Back to the Deck List
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setInlineFlashDeck(null)}
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/50 bg-primary/20 text-white shadow-sm transition-colors hover:bg-primary/30 hover:border-primary/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-10 sm:w-10"
-                        aria-label="Back to deck list"
-                      >
-                        <ArrowLeft className="h-5 w-5 shrink-0 sm:h-5 sm:w-5" strokeWidth={2.5} />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setInlineFlashDeck(null)}
+                      className="hidden md:inline-flex items-center gap-2 rounded-lg border border-slate-500/50 bg-slate-700/40 px-3 py-2 text-sm font-semibold text-slate-200 shadow-sm transition-colors hover:bg-slate-600/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                      aria-label="Back to deck list"
+                    >
+                      <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                      Back
+                    </button>
                   }
                 />
               </div>
