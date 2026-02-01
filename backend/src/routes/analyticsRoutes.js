@@ -5,7 +5,7 @@ import {
   getVisitsChartData,
   getQuizAttemptsChartData,
 } from '../controllers/analyticsController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -13,8 +13,8 @@ const router = express.Router();
 router.post('/track', trackPageVisit);
 
 // Protected routes (admin only)
-router.get('/stats', authenticateToken, getAnalyticsStats);
-router.get('/chart/visits', authenticateToken, getVisitsChartData);
-router.get('/chart/quiz-attempts', authenticateToken, getQuizAttemptsChartData);
+router.get('/stats', authenticateAdmin, getAnalyticsStats);
+router.get('/chart/visits', authenticateAdmin, getVisitsChartData);
+router.get('/chart/quiz-attempts', authenticateAdmin, getQuizAttemptsChartData);
 
 export default router;
