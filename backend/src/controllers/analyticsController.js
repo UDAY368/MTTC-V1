@@ -3,12 +3,21 @@ import prisma from '../config/database.js';
 /**
  * Track a page visit
  * POST /api/analytics/track
+ * Works for any device (mobile, laptop, etc.) - no auth required.
  */
 export const trackPageVisit = async (req, res) => {
   try {
-    const { pageUrl, pageType, referrer, userAgent, sessionId } = req.body;
+    const body = req.body || {};
+    const pageUrl = typeof body.pageUrl === 'string' && body.pageUrl.trim()
+      ? body.pageUrl.trim()
+      : '/';
+    const pageType = typeof body.pageType === 'string' ? body.pageType : null;
+    const referrer = typeof body.referrer === 'string' ? body.referrer : null;
+    const userAgent = typeof body.userAgent === 'string' ? body.userAgent : null;
+    const sessionId = typeof body.sessionId === 'string' && body.sessionId.trim()
+      ? body.sessionId.trim()
+      : null;
 
-    // Create page visit record
     const visit = await prisma.pageVisit.create({
       data: {
         pageUrl,
@@ -16,12 +25,11 @@ export const trackPageVisit = async (req, res) => {
         referrer,
         userAgent,
         sessionId,
-        // Note: In production, consider anonymizing IP addresses for privacy
-        ipAddress: req.ip || req.connection.remoteAddress,
+        ipAddress: req.ip || req.connection?.remoteAddress || null,
       },
     });
 
-    res.json({
+    res.status(201).json({
       success: true,
       data: visit,
     });
@@ -80,19 +88,19 @@ export const getAnalyticsStats = async (req, res) => {
       where: whereClause,
     });
 
-    // Get live users (last 30 minutes) - always calculated regardless of filter
+    // Live users = unique sessions in last 30 minutes (any device); include visits without sessionId
     const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
-    const liveUsers = await prisma.pageVisit.groupBy({
-      by: ['sessionId'],
-      where: {
-        visitedAt: {
-          gte: thirtyMinutesAgo,
-        },
-        sessionId: {
-          not: null,
-        },
-      },
+    const recentVisits = await prisma.pageVisit.findMany({
+      where: { visitedAt: { gte: thirtyMinutesAgo } },
+      select: { sessionId: true },
     });
+    const uniqueSessionIds = new Set(
+      recentVisits
+        .map((v) => v.sessionId)
+        .filter((id) => id != null && String(id).trim() !== '')
+    );
+    const visitsWithoutSession = recentVisits.filter((v) => v.sessionId == null || String(v.sessionId).trim() === '');
+    const liveUsersCount = uniqueSessionIds.size + visitsWithoutSession.length;
 
     // Get total quiz attempts
     const quizAttemptsWhere = startDate
@@ -112,7 +120,7 @@ export const getAnalyticsStats = async (req, res) => {
       success: true,
       data: {
         totalVisits,
-        liveUsers: liveUsers.length,
+        liveUsers: liveUsersCount,
         totalQuizAttempts,
         filter,
       },

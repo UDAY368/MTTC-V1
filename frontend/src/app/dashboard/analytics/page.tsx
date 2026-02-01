@@ -54,20 +54,29 @@ export default function AnalyticsPage() {
     fetchStats();
   }, [filter]);
 
+  // Auto-refresh stats so counts update without manual refresh (e.g. Total Visits, Live Users)
+  useEffect(() => {
+    const intervalMs = 30 * 1000; // 30 seconds
+    const intervalId = setInterval(() => {
+      fetchStats(true); // silent = no spinner
+    }, intervalMs);
+    return () => clearInterval(intervalId);
+  }, [filter]);
+
   useEffect(() => {
     fetchChartData();
   }, [chartView, chartType, chartYear, chartMonth]);
 
-  const fetchStats = async () => {
+  const fetchStats = async (silent = false) => {
     try {
-      setRefreshing(true);
+      if (!silent) setRefreshing(true);
       const response = await api.get(`/analytics/stats?filter=${filter}`);
       setStats(response.data.data);
     } catch (error) {
-      console.error('Error fetching analytics stats:', error);
+      if (!silent) console.error('Error fetching analytics stats:', error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      if (!silent) setRefreshing(false);
     }
   };
 
@@ -335,43 +344,43 @@ export default function AnalyticsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Bar Chart */}
-                <div className="space-y-3">
+                {/* Bar Chart - X axis: days/labels, Y axis: count (bars grow upward) */}
+                <div className="flex items-end gap-1 sm:gap-2 min-h-[280px] pt-8 pb-2">
                   {chartData.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
+                    <div className="flex-1 text-center py-12 text-muted-foreground">
                       No data available for the selected period
                     </div>
                   ) : (
                     chartData.map((item, index) => {
-                      const percentage = (item.value / maxValue) * 100;
+                      const percentage = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
+                      const xLabel = item.label.replace(/^Day\s+/i, '') || item.label;
                       return (
                         <motion.div
                           key={item.label}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.02 }}
-                          className="space-y-1"
+                          initial={{ opacity: 0, scaleY: 0 }}
+                          animate={{ opacity: 1, scaleY: 1 }}
+                          transition={{ duration: 0.4, delay: index * 0.02 }}
+                          className="flex flex-col items-center flex-1 min-w-0"
                         >
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground font-medium">
-                              {item.label}
-                            </span>
-                            <span className="font-semibold">{item.value}</span>
-                          </div>
-                          <div className="h-8 bg-muted rounded-lg overflow-hidden">
+                          <div
+                            className="w-full flex flex-col justify-end items-center"
+                            style={{ height: 220 }}
+                          >
+                            {item.value > 0 && (
+                              <span className="text-xs font-medium text-foreground mb-1">
+                                {item.value}
+                              </span>
+                            )}
                             <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${percentage}%` }}
+                              initial={{ height: 0 }}
+                              animate={{ height: `${Math.max(percentage, 2)}%` }}
                               transition={{ duration: 0.5, delay: index * 0.02 }}
-                              className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-lg flex items-center justify-end pr-3"
-                            >
-                              {item.value > 0 && (
-                                <span className="text-xs font-medium text-primary-foreground">
-                                  {item.value}
-                                </span>
-                              )}
-                            </motion.div>
+                              className="w-full max-w-[32px] min-h-[4px] bg-gradient-to-t from-primary to-primary/70 rounded-t-md"
+                            />
                           </div>
+                          <span className="text-[10px] sm:text-xs text-muted-foreground font-medium mt-2 truncate w-full text-center">
+                            {xLabel}
+                          </span>
                         </motion.div>
                       );
                     })

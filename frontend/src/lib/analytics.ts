@@ -28,14 +28,14 @@ export const trackPageVisit = async ({ pageUrl, pageType }: TrackPageVisitParams
     const referrer = document.referrer || undefined;
     const userAgent = navigator.userAgent;
 
-    await fetch(`${API_BASE_URL}/analytics/track`, {
+    await fetch(`${API_BASE_URL}/api/analytics/track`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        pageUrl,
-        pageType,
+        pageUrl: pageUrl || (typeof window !== 'undefined' ? window.location.pathname || '/' : '/'),
+        pageType: pageType || 'page',
         referrer,
         userAgent,
         sessionId,
