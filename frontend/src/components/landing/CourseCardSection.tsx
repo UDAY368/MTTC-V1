@@ -9,6 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
+/** Default course ID for the landing CTA — no API dependency. Set in production for instant "About Course" link. */
+const DEFAULT_COURSE_ID = typeof process.env.NEXT_PUBLIC_DEFAULT_COURSE_ID === 'string' && process.env.NEXT_PUBLIC_DEFAULT_COURSE_ID.trim()
+  ? process.env.NEXT_PUBLIC_DEFAULT_COURSE_ID.trim()
+  : null;
+
 interface Course {
   id: string;
   name: string;
@@ -51,7 +56,25 @@ function MetaRow({
 export function CourseCardSection() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
+  // When env is not set, one minimal request gives us the CTA link quickly (no dependency on full /public/courses)
+  const [defaultIdFromApi, setDefaultIdFromApi] = useState<string | null>(null);
 
+  // Fast path: when no env default, fetch only the first course ID so "About Course" link works with minimal latency
+  useEffect(() => {
+    if (DEFAULT_COURSE_ID) return;
+    let cancelled = false;
+    api
+      .get<{ success: boolean; data: { id: string } | null }>('/public/default-course-id')
+      .then((res) => {
+        if (cancelled) return;
+        const id = res.data?.data?.id;
+        if (id) setDefaultIdFromApi(id);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Full course data for card display (name, duration, instructor) — non-blocking for CTA
   useEffect(() => {
     let cancelled = false;
     api
@@ -69,9 +92,7 @@ export function CourseCardSection() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const academyName = 'Nlight Spiritual Science Academy';
@@ -79,6 +100,10 @@ export function CourseCardSection() {
   const displayDesc = course?.description ?? 'A transformative program for deepening practice and learning to guide others in meditation.';
   const displayDuration = course?.duration ?? '';
   const displayInstructor = course?.instructorName ?? '';
+
+  // CTA works: immediately when env is set; or as soon as default-course-id returns; or when full course list returns
+  const effectiveCourseId = course?.id ?? DEFAULT_COURSE_ID ?? defaultIdFromApi;
+  const showAboutCourseLink = Boolean(effectiveCourseId);
 
   return (
     <section aria-label="Course card" className="px-4 py-12 sm:px-6 sm:py-16 md:px-8 lg:py-20">
@@ -155,9 +180,8 @@ export function CourseCardSection() {
                     </span>
                     <span>By {academyName}</span>
                   </motion.div>
-                  {loading ? (
-                    <Skeleton className="mt-3 h-12 w-full max-w-md rounded-xl" />
-                  ) : course ? (
+                  {/* About Course CTA: never blocked when NEXT_PUBLIC_DEFAULT_COURSE_ID is set; link always shown when we have an effective course ID */}
+                  {showAboutCourseLink ? (
                     <motion.div
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -165,12 +189,15 @@ export function CourseCardSection() {
                       className="mt-3"
                     >
                       <Link
-                        href={`/course/${course.id}`}
+                        href={`/course/${effectiveCourseId}`}
+                        prefetch={true}
                         className="flex h-12 w-full items-center justify-center rounded-xl bg-primary text-base font-semibold tracking-wide text-primary-foreground shadow-lg shadow-primary/25 ring-offset-background transition-all duration-300 ease-out hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:h-14 sm:text-lg"
                       >
                         About Course
                       </Link>
                     </motion.div>
+                  ) : loading ? (
+                    <Skeleton className="mt-3 h-12 w-full max-w-md rounded-xl" />
                   ) : (
                     <Button variant="outline" size="lg" className="mt-3 h-12 w-full rounded-xl text-base sm:h-14 sm:text-lg" disabled>
                       <span>About Course</span>

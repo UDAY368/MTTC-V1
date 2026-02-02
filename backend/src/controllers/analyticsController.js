@@ -136,17 +136,110 @@ export const getAnalyticsStats = async (req, res) => {
 };
 
 /**
+ * Helper: build date range from filter (same logic as stats)
+ */
+function getDateRangeFromFilter(filter) {
+  const now = new Date();
+  let startDate = null;
+  let endDate = null;
+
+  switch (filter) {
+    case 'today':
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      endDate = new Date(now.getTime());
+      break;
+    case 'yesterday':
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      break;
+    case 'week':
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      endDate = new Date(now.getTime());
+      break;
+    case 'month':
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      endDate = new Date(now.getTime());
+      break;
+    default:
+      startDate = null; // all time
+      endDate = null;
+  }
+  return { startDate, endDate };
+}
+
+/**
  * Get chart data for visits
  * GET /api/analytics/chart/visits?view=day|month&year=2024&month=1
+ * When filter is provided, chart uses same date range as stats (sum matches stats)
  */
 export const getVisitsChartData = async (req, res) => {
   try {
-    const { view = 'day', year, month } = req.query;
+    const { view = 'day', year, month, filter } = req.query;
+
+    // When filter is provided, use it so chart sum matches stats
+    if (filter && ['all', 'today', 'yesterday', 'week', 'month'].includes(filter)) {
+      const { startDate, endDate } = getDateRangeFromFilter(filter);
+      const whereClause = startDate
+        ? { visitedAt: { gte: startDate, ...(endDate ? { lt: endDate } : {}) } }
+        : {};
+
+      const visits = await prisma.pageVisit.findMany({
+        where: whereClause,
+        select: { visitedAt: true },
+      });
+
+      let data = [];
+      if (filter === 'all') {
+        const byYear = {};
+        visits.forEach((v) => {
+          const y = v.visitedAt.getFullYear();
+          byYear[y] = (byYear[y] || 0) + 1;
+        });
+        data = Object.entries(byYear).sort((a, b) => Number(a[0]) - Number(b[0])).map(([y, count]) => ({ label: y, value: count }));
+      } else if (filter === 'today' || filter === 'yesterday') {
+        const total = visits.length;
+        data = total > 0 ? [{ label: filter === 'today' ? 'Today' : 'Yesterday', value: total }] : [{ label: filter === 'today' ? 'Today' : 'Yesterday', value: 0 }];
+      } else if (filter === 'week') {
+        const now = new Date();
+        const byDay = {};
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          const key = d.toISOString().slice(0, 10);
+          byDay[key] = 0;
+        }
+        visits.forEach((v) => {
+          const key = v.visitedAt.toISOString().slice(0, 10);
+          if (byDay[key] !== undefined) byDay[key]++;
+        });
+        data = Object.entries(byDay).map(([k, count]) => ({
+          label: new Date(k).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+          value: count,
+        }));
+      } else if (filter === 'month') {
+        const now = new Date();
+        const byDay = {};
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          const key = d.toISOString().slice(0, 10);
+          byDay[key] = 0;
+        }
+        visits.forEach((v) => {
+          const key = v.visitedAt.toISOString().slice(0, 10);
+          if (byDay[key] !== undefined) byDay[key]++;
+        });
+        data = Object.entries(byDay).map(([k, count]) => ({
+          label: new Date(k).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          value: count,
+        }));
+      }
+
+      return res.json({ success: true, data });
+    }
 
     if (!year) {
       return res.status(400).json({
         success: false,
-        message: 'Year is required',
+        message: 'Year is required when filter is not provided',
       });
     }
 
@@ -260,15 +353,76 @@ export const getVisitsChartData = async (req, res) => {
 /**
  * Get chart data for quiz attempts
  * GET /api/analytics/chart/quiz-attempts?view=day|month&year=2024&month=1
+ * When filter is provided, chart uses same date range as stats (sum matches stats)
  */
 export const getQuizAttemptsChartData = async (req, res) => {
   try {
-    const { view = 'day', year, month } = req.query;
+    const { view = 'day', year, month, filter } = req.query;
+
+    // When filter is provided, use it so chart sum matches stats
+    if (filter && ['all', 'today', 'yesterday', 'week', 'month'].includes(filter)) {
+      const { startDate, endDate } = getDateRangeFromFilter(filter);
+      const whereClause = startDate
+        ? { startedAt: { gte: startDate, ...(endDate ? { lt: endDate } : {}) } }
+        : {};
+
+      const attempts = await prisma.quizAttempt.findMany({
+        where: whereClause,
+        select: { startedAt: true },
+      });
+
+      let data = [];
+      if (filter === 'all') {
+        const byYear = {};
+        attempts.forEach((a) => {
+          const y = a.startedAt.getFullYear();
+          byYear[y] = (byYear[y] || 0) + 1;
+        });
+        data = Object.entries(byYear).sort((a, b) => Number(a[0]) - Number(b[0])).map(([y, count]) => ({ label: y, value: count }));
+      } else if (filter === 'today' || filter === 'yesterday') {
+        const total = attempts.length;
+        data = total > 0 ? [{ label: filter === 'today' ? 'Today' : 'Yesterday', value: total }] : [{ label: filter === 'today' ? 'Today' : 'Yesterday', value: 0 }];
+      } else if (filter === 'week') {
+        const now = new Date();
+        const byDay = {};
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          const key = d.toISOString().slice(0, 10);
+          byDay[key] = 0;
+        }
+        attempts.forEach((a) => {
+          const key = a.startedAt.toISOString().slice(0, 10);
+          if (byDay[key] !== undefined) byDay[key]++;
+        });
+        data = Object.entries(byDay).map(([k, count]) => ({
+          label: new Date(k).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+          value: count,
+        }));
+      } else if (filter === 'month') {
+        const now = new Date();
+        const byDay = {};
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+          const key = d.toISOString().slice(0, 10);
+          byDay[key] = 0;
+        }
+        attempts.forEach((a) => {
+          const key = a.startedAt.toISOString().slice(0, 10);
+          if (byDay[key] !== undefined) byDay[key]++;
+        });
+        data = Object.entries(byDay).map(([k, count]) => ({
+          label: new Date(k).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          value: count,
+        }));
+      }
+
+      return res.json({ success: true, data });
+    }
 
     if (!year) {
       return res.status(400).json({
         success: false,
-        message: 'Year is required',
+        message: 'Year is required when filter is not provided',
       });
     }
 

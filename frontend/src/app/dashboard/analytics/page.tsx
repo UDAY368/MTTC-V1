@@ -65,12 +65,21 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetchChartData();
-  }, [chartView, chartType, chartYear, chartMonth]);
+  }, [filter, chartView, chartType, chartYear, chartMonth]);
+
+  // Auto-refresh chart so Quiz Attempts / Total Visits chart shows updated numbers
+  useEffect(() => {
+    const intervalMs = 30 * 1000; // 30 seconds (same as stats)
+    const intervalId = setInterval(() => {
+      fetchChartData(true); // silent = no spinner
+    }, intervalMs);
+    return () => clearInterval(intervalId);
+  }, [filter, chartView, chartType, chartYear, chartMonth]);
 
   const fetchStats = async (silent = false) => {
     try {
       if (!silent) setRefreshing(true);
-      const response = await api.get(`/analytics/stats?filter=${filter}`);
+      const response = await api.get(`/analytics/stats?filter=${filter}&_t=${Date.now()}`);
       setStats(response.data.data);
     } catch (error) {
       if (!silent) console.error('Error fetching analytics stats:', error);
@@ -80,25 +89,27 @@ export default function AnalyticsPage() {
     }
   };
 
-  const fetchChartData = async () => {
+  const fetchChartData = async (silent = false) => {
     try {
-      setChartLoading(true);
+      if (!silent) setChartLoading(true);
       const endpoint = chartType === 'visits' 
         ? '/analytics/chart/visits' 
         : '/analytics/chart/quiz-attempts';
       
       const params = new URLSearchParams({
+        filter,
         view: chartView,
         year: chartYear,
+        _t: String(Date.now()),
         ...(chartView === 'day' ? { month: chartMonth } : {}),
       });
 
       const response = await api.get(`${endpoint}?${params}`);
       setChartData(response.data.data);
     } catch (error) {
-      console.error('Error fetching chart data:', error);
+      if (!silent) console.error('Error fetching chart data:', error);
     } finally {
-      setChartLoading(false);
+      if (!silent) setChartLoading(false);
     }
   };
 

@@ -47,6 +47,23 @@ export const getPublicCourses = async (req, res, next) => {
 };
 
 /**
+ * Get default (first) course ID only — minimal query for landing CTA, no auth.
+ * GET /api/public/default-course-id
+ * Use when NEXT_PUBLIC_DEFAULT_COURSE_ID is not set so the "About Course" link can work with one fast request.
+ */
+export const getPublicDefaultCourseId = async (req, res, next) => {
+  try {
+    const first = await prisma.course.findFirst({
+      select: { id: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.json({ success: true, data: first ? { id: first.id } : null });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Get Course by ID (public) — for About Course page, no auth required.
  * GET /api/public/courses/:id
  */
