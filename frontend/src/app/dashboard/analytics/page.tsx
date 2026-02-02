@@ -95,17 +95,20 @@ export default function AnalyticsPage() {
       const endpoint = chartType === 'visits' 
         ? '/analytics/chart/visits' 
         : '/analytics/chart/quiz-attempts';
-      
+      const isDayWise = chartView === 'day';
+      const isMonthWise = chartView === 'month';
+      const effectiveYear = chartYear || String(new Date().getFullYear());
+      const effectiveMonth = isDayWise ? (chartMonth || String(new Date().getMonth() + 1)) : '';
       const params = new URLSearchParams({
-        filter,
         view: chartView,
-        year: chartYear,
+        year: effectiveYear,
         _t: String(Date.now()),
-        ...(chartView === 'day' ? { month: chartMonth } : {}),
       });
+      if (isDayWise) params.set('month', effectiveMonth);
+      if (!isDayWise && !isMonthWise && filter) params.set('filter', filter);
 
       const response = await api.get(`${endpoint}?${params}`);
-      setChartData(response.data.data);
+      setChartData(response.data.data ?? []);
     } catch (error) {
       if (!silent) console.error('Error fetching chart data:', error);
     } finally {
@@ -355,47 +358,68 @@ export default function AnalyticsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Bar Chart - X axis: days/labels, Y axis: count (bars grow upward) */}
-                <div className="flex items-end gap-1 sm:gap-2 min-h-[280px] pt-8 pb-2">
-                  {chartData.length === 0 ? (
-                    <div className="flex-1 text-center py-12 text-muted-foreground">
-                      No data available for the selected period
-                    </div>
-                  ) : (
-                    chartData.map((item, index) => {
-                      const percentage = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
-                      const xLabel = item.label.replace(/^Day\s+/i, '') || item.label;
-                      return (
-                        <motion.div
-                          key={item.label}
-                          initial={{ opacity: 0, scaleY: 0 }}
-                          animate={{ opacity: 1, scaleY: 1 }}
-                          transition={{ duration: 0.4, delay: index * 0.02 }}
-                          className="flex flex-col items-center flex-1 min-w-0"
-                        >
-                          <div
-                            className="w-full flex flex-col justify-end items-center"
-                            style={{ height: 220 }}
-                          >
-                            {item.value > 0 && (
-                              <span className="text-xs font-medium text-foreground mb-1">
-                                {item.value}
-                              </span>
-                            )}
+                {/* Chart: X = day of month (Day Wise) or month name (Month Wise), Y = count. Axis labels for clarity. */}
+                <div className="flex gap-2 min-h-[300px]">
+                  {/* Y-axis: count (Total Visits / Quiz Attempts) */}
+                  <div className="flex flex-col justify-end pb-10 pr-1">
+                    <span className="text-[10px] sm:text-xs text-muted-foreground font-medium" aria-hidden>
+                      Count
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-end gap-1 sm:gap-2 min-h-[280px] pt-8 pb-2 overflow-x-auto overflow-y-visible">
+                      {chartData.length === 0 ? (
+                        <div className="flex-1 min-w-full text-center py-12 text-muted-foreground">
+                          No data available for the selected period
+                        </div>
+                      ) : (
+                        chartData.map((item, index) => {
+                          const percentage = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
+                          const xLabel = item.label.replace(/^Day\s+/i, '') || item.label;
+                          const isDayWise = chartView === 'day' && /^\d+$/.test(xLabel);
+                          const isMonthWiseBar = chartView === 'month';
+                          const barMinWidth = isDayWise ? 24 : isMonthWiseBar ? 36 : undefined;
+                          const barFlex = isDayWise || isMonthWiseBar ? '0 0 auto' : 1;
+                          return (
                             <motion.div
-                              initial={{ height: 0 }}
-                              animate={{ height: `${Math.max(percentage, 2)}%` }}
-                              transition={{ duration: 0.5, delay: index * 0.02 }}
-                              className="w-full max-w-[32px] min-h-[4px] bg-gradient-to-t from-primary to-primary/70 rounded-t-md"
-                            />
-                          </div>
-                          <span className="text-[10px] sm:text-xs text-muted-foreground font-medium mt-2 truncate w-full text-center">
-                            {xLabel}
-                          </span>
-                        </motion.div>
-                      );
-                    })
-                  )}
+                              key={`${item.label}-${index}`}
+                              initial={{ opacity: 0, scaleY: 0 }}
+                              animate={{ opacity: 1, scaleY: 1 }}
+                              transition={{ duration: 0.4, delay: index * 0.02 }}
+                              className="flex flex-col items-center flex-shrink-0"
+                              style={{ minWidth: barMinWidth, flex: barFlex }}
+                            >
+                              <div
+                                className="w-full flex flex-col justify-end items-center"
+                                style={{ height: 220 }}
+                              >
+                                {item.value > 0 && (
+                                  <span className="text-xs font-medium text-foreground mb-1">
+                                    {item.value}
+                                  </span>
+                                )}
+                                <motion.div
+                                  initial={{ height: 0 }}
+                                  animate={{ height: `${Math.max(percentage, 2)}%` }}
+                                  transition={{ duration: 0.5, delay: index * 0.02 }}
+                                  className="w-full max-w-[32px] min-h-[4px] bg-gradient-to-t from-primary to-primary/70 rounded-t-md"
+                                />
+                              </div>
+                              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium mt-2 truncate w-full text-center" title={item.label}>
+                                {xLabel}
+                              </span>
+                            </motion.div>
+                          );
+                        })
+                      )}
+                    </div>
+                    {/* X-axis label: Day of month (Day Wise) or Month (Month Wise) */}
+                    <div className="pt-1 text-center">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+                        {chartView === 'day' ? 'Day of month (1–31)' : 'Month'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Summary */}

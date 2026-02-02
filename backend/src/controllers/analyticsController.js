@@ -174,10 +174,73 @@ function getDateRangeFromFilter(filter) {
  */
 export const getVisitsChartData = async (req, res) => {
   try {
-    const { view = 'day', year, month, filter } = req.query;
+    const { view, year, month, filter } = req.query;
+    const viewVal = Array.isArray(view) ? view[0] : view;
+    const yearVal = Array.isArray(year) ? year[0] : year;
+    const monthVal = Array.isArray(month) ? month[0] : month;
+    const v = String(viewVal || 'day').toLowerCase().trim();
+    const now = new Date();
+    const y = yearVal != null && String(yearVal).trim() ? String(yearVal).trim() : (v === 'day' || v === 'month' ? String(now.getFullYear()) : null);
+    const m = monthVal != null && String(monthVal).trim() ? String(monthVal).trim() : (v === 'day' && y ? String(now.getMonth() + 1) : null);
 
-    // When filter is provided, use it so chart sum matches stats
-    if (filter && ['all', 'today', 'yesterday', 'week', 'month'].includes(filter)) {
+    // 1) Day-wise: X = days 1..31 of selected month, Y = visit count — always when view=day (never use filter branch)
+    if (v === 'day' && y && m) {
+      const monthNum = Math.min(12, Math.max(1, parseInt(m, 10) || 1));
+      const startDate = new Date(parseInt(y, 10), monthNum - 1, 1);
+      const endDate = new Date(parseInt(y, 10), monthNum, 0);
+      const daysInMonth = endDate.getDate();
+
+      const visits = await prisma.pageVisit.findMany({
+        where: {
+          visitedAt: {
+            gte: startDate,
+            lte: new Date(parseInt(y, 10), monthNum, 0, 23, 59, 59),
+          },
+        },
+        select: { visitedAt: true },
+      });
+
+      const visitsByDay = {};
+      for (let day = 1; day <= daysInMonth; day++) {
+        visitsByDay[day] = 0;
+      }
+      visits.forEach((visit) => {
+        const day = visit.visitedAt.getDate();
+        visitsByDay[day]++;
+      });
+
+      const data = Object.entries(visitsByDay)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([day, count]) => ({ label: `Day ${day}`, value: count }));
+      return res.json({ success: true, data });
+    }
+
+    // 2) Month-wise: X = Jan–Dec for selected year, Y = visit count
+    if (v === 'month' && y) {
+      const startDate = new Date(parseInt(y, 10), 0, 1);
+      const endDate = new Date(parseInt(y, 10), 11, 31, 23, 59, 59);
+      const visits = await prisma.pageVisit.findMany({
+        where: { visitedAt: { gte: startDate, lte: endDate } },
+        select: { visitedAt: true },
+      });
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const visitsByMonth = {};
+      for (let mo = 0; mo < 12; mo++) visitsByMonth[mo] = 0;
+      visits.forEach((visit) => {
+        const mo = visit.visitedAt.getMonth();
+        visitsByMonth[mo]++;
+      });
+      const data = Object.entries(visitsByMonth)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([mo, count]) => ({
+          label: monthNames[parseInt(mo, 10)],
+          value: count,
+        }));
+      return res.json({ success: true, data });
+    }
+
+    // 3) Fallback: use filter (All Time / Today / etc.) so chart sum can match stats
+    if (filter && ['all', 'today', 'yesterday', 'week', 'month'].includes(String(filter))) {
       const { startDate, endDate } = getDateRangeFromFilter(filter);
       const whereClause = startDate
         ? { visitedAt: { gte: startDate, ...(endDate ? { lt: endDate } : {}) } }
@@ -192,10 +255,10 @@ export const getVisitsChartData = async (req, res) => {
       if (filter === 'all') {
         const byYear = {};
         visits.forEach((v) => {
-          const y = v.visitedAt.getFullYear();
-          byYear[y] = (byYear[y] || 0) + 1;
+          const yr = v.visitedAt.getFullYear();
+          byYear[yr] = (byYear[yr] || 0) + 1;
         });
-        data = Object.entries(byYear).sort((a, b) => Number(a[0]) - Number(b[0])).map(([y, count]) => ({ label: y, value: count }));
+        data = Object.entries(byYear).sort((a, b) => Number(a[0]) - Number(b[0])).map(([yr, count]) => ({ label: String(yr), value: count }));
       } else if (filter === 'today' || filter === 'yesterday') {
         const total = visits.length;
         data = total > 0 ? [{ label: filter === 'today' ? 'Today' : 'Yesterday', value: total }] : [{ label: filter === 'today' ? 'Today' : 'Yesterday', value: 0 }];
@@ -232,113 +295,12 @@ export const getVisitsChartData = async (req, res) => {
           value: count,
         }));
       }
-
       return res.json({ success: true, data });
     }
 
-    if (!year) {
-      return res.status(400).json({
-        success: false,
-        message: 'Year is required when filter is not provided',
-      });
-    }
-
-    let data = [];
-
-    if (view === 'day') {
-      // Day-wise view requires month
-      if (!month) {
-        return res.status(400).json({
-          success: false,
-          message: 'Month is required for day-wise view',
-        });
-      }
-
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const endDate = new Date(parseInt(year), parseInt(month), 0);
-      const daysInMonth = endDate.getDate();
-
-      // Get all visits for the month
-      const visits = await prisma.pageVisit.findMany({
-        where: {
-          visitedAt: {
-            gte: startDate,
-            lte: new Date(parseInt(year), parseInt(month), 0, 23, 59, 59),
-          },
-        },
-        select: {
-          visitedAt: true,
-        },
-      });
-
-      // Group by day
-      const visitsByDay = {};
-      for (let day = 1; day <= daysInMonth; day++) {
-        visitsByDay[day] = 0;
-      }
-
-      visits.forEach((visit) => {
-        const day = visit.visitedAt.getDate();
-        visitsByDay[day]++;
-      });
-
-      data = Object.entries(visitsByDay).map(([day, count]) => ({
-        label: `Day ${day}`,
-        value: count,
-      }));
-    } else if (view === 'month') {
-      // Month-wise view for the entire year
-      const startDate = new Date(parseInt(year), 0, 1);
-      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
-
-      // Get all visits for the year
-      const visits = await prisma.pageVisit.findMany({
-        where: {
-          visitedAt: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        select: {
-          visitedAt: true,
-        },
-      });
-
-      // Group by month
-      const visitsByMonth = {};
-      const monthNames = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-
-      for (let month = 0; month < 12; month++) {
-        visitsByMonth[month] = 0;
-      }
-
-      visits.forEach((visit) => {
-        const month = visit.visitedAt.getMonth();
-        visitsByMonth[month]++;
-      });
-
-      data = Object.entries(visitsByMonth).map(([month, count]) => ({
-        label: monthNames[parseInt(month)],
-        value: count,
-      }));
-    }
-
-    res.json({
-      success: true,
-      data,
+    return res.status(400).json({
+      success: false,
+      message: 'Provide view=day with year and month, or view=month with year, or filter (all/today/yesterday/week/month).',
     });
   } catch (error) {
     console.error('Error fetching visits chart data:', error);
@@ -357,10 +319,73 @@ export const getVisitsChartData = async (req, res) => {
  */
 export const getQuizAttemptsChartData = async (req, res) => {
   try {
-    const { view = 'day', year, month, filter } = req.query;
+    const { view, year, month, filter } = req.query;
+    const viewVal = Array.isArray(view) ? view[0] : view;
+    const yearVal = Array.isArray(year) ? year[0] : year;
+    const monthVal = Array.isArray(month) ? month[0] : month;
+    const v = String(viewVal || 'day').toLowerCase().trim();
+    const nowQuiz = new Date();
+    const y = yearVal != null && String(yearVal).trim() ? String(yearVal).trim() : (v === 'day' || v === 'month' ? String(nowQuiz.getFullYear()) : null);
+    const m = monthVal != null && String(monthVal).trim() ? String(monthVal).trim() : (v === 'day' && y ? String(nowQuiz.getMonth() + 1) : null);
 
-    // When filter is provided, use it so chart sum matches stats
-    if (filter && ['all', 'today', 'yesterday', 'week', 'month'].includes(filter)) {
+    // 1) Day-wise: X = days 1..31 of selected month, Y = quiz attempt count — always when view=day
+    if (v === 'day' && y && m) {
+      const monthNum = Math.min(12, Math.max(1, parseInt(m, 10) || 1));
+      const startDate = new Date(parseInt(y, 10), monthNum - 1, 1);
+      const endDate = new Date(parseInt(y, 10), monthNum, 0);
+      const daysInMonth = endDate.getDate();
+
+      const attempts = await prisma.quizAttempt.findMany({
+        where: {
+          startedAt: {
+            gte: startDate,
+            lte: new Date(parseInt(y, 10), monthNum, 0, 23, 59, 59),
+          },
+        },
+        select: { startedAt: true },
+      });
+
+      const attemptsByDay = {};
+      for (let day = 1; day <= daysInMonth; day++) {
+        attemptsByDay[day] = 0;
+      }
+      attempts.forEach((attempt) => {
+        const day = attempt.startedAt.getDate();
+        attemptsByDay[day]++;
+      });
+
+      const data = Object.entries(attemptsByDay)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([day, count]) => ({ label: `Day ${day}`, value: count }));
+      return res.json({ success: true, data });
+    }
+
+    // 2) Month-wise: X = Jan–Dec for selected year, Y = quiz attempt count
+    if (v === 'month' && y) {
+      const startDate = new Date(parseInt(y, 10), 0, 1);
+      const endDate = new Date(parseInt(y, 10), 11, 31, 23, 59, 59);
+      const attempts = await prisma.quizAttempt.findMany({
+        where: { startedAt: { gte: startDate, lte: endDate } },
+        select: { startedAt: true },
+      });
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const attemptsByMonth = {};
+      for (let mo = 0; mo < 12; mo++) attemptsByMonth[mo] = 0;
+      attempts.forEach((attempt) => {
+        const mo = attempt.startedAt.getMonth();
+        attemptsByMonth[mo]++;
+      });
+      const data = Object.entries(attemptsByMonth)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([mo, count]) => ({
+          label: monthNames[parseInt(mo, 10)],
+          value: count,
+        }));
+      return res.json({ success: true, data });
+    }
+
+    // 3) Fallback: use filter so chart sum can match stats
+    if (filter && ['all', 'today', 'yesterday', 'week', 'month'].includes(String(filter))) {
       const { startDate, endDate } = getDateRangeFromFilter(filter);
       const whereClause = startDate
         ? { startedAt: { gte: startDate, ...(endDate ? { lt: endDate } : {}) } }
@@ -375,10 +400,10 @@ export const getQuizAttemptsChartData = async (req, res) => {
       if (filter === 'all') {
         const byYear = {};
         attempts.forEach((a) => {
-          const y = a.startedAt.getFullYear();
-          byYear[y] = (byYear[y] || 0) + 1;
+          const yr = a.startedAt.getFullYear();
+          byYear[yr] = (byYear[yr] || 0) + 1;
         });
-        data = Object.entries(byYear).sort((a, b) => Number(a[0]) - Number(b[0])).map(([y, count]) => ({ label: y, value: count }));
+        data = Object.entries(byYear).sort((a, b) => Number(a[0]) - Number(b[0])).map(([yr, count]) => ({ label: String(yr), value: count }));
       } else if (filter === 'today' || filter === 'yesterday') {
         const total = attempts.length;
         data = total > 0 ? [{ label: filter === 'today' ? 'Today' : 'Yesterday', value: total }] : [{ label: filter === 'today' ? 'Today' : 'Yesterday', value: 0 }];
@@ -415,113 +440,12 @@ export const getQuizAttemptsChartData = async (req, res) => {
           value: count,
         }));
       }
-
       return res.json({ success: true, data });
     }
 
-    if (!year) {
-      return res.status(400).json({
-        success: false,
-        message: 'Year is required when filter is not provided',
-      });
-    }
-
-    let data = [];
-
-    if (view === 'day') {
-      // Day-wise view requires month
-      if (!month) {
-        return res.status(400).json({
-          success: false,
-          message: 'Month is required for day-wise view',
-        });
-      }
-
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const endDate = new Date(parseInt(year), parseInt(month), 0);
-      const daysInMonth = endDate.getDate();
-
-      // Get all quiz attempts for the month
-      const attempts = await prisma.quizAttempt.findMany({
-        where: {
-          startedAt: {
-            gte: startDate,
-            lte: new Date(parseInt(year), parseInt(month), 0, 23, 59, 59),
-          },
-        },
-        select: {
-          startedAt: true,
-        },
-      });
-
-      // Group by day
-      const attemptsByDay = {};
-      for (let day = 1; day <= daysInMonth; day++) {
-        attemptsByDay[day] = 0;
-      }
-
-      attempts.forEach((attempt) => {
-        const day = attempt.startedAt.getDate();
-        attemptsByDay[day]++;
-      });
-
-      data = Object.entries(attemptsByDay).map(([day, count]) => ({
-        label: `Day ${day}`,
-        value: count,
-      }));
-    } else if (view === 'month') {
-      // Month-wise view for the entire year
-      const startDate = new Date(parseInt(year), 0, 1);
-      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
-
-      // Get all quiz attempts for the year
-      const attempts = await prisma.quizAttempt.findMany({
-        where: {
-          startedAt: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        select: {
-          startedAt: true,
-        },
-      });
-
-      // Group by month
-      const attemptsByMonth = {};
-      const monthNames = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-
-      for (let month = 0; month < 12; month++) {
-        attemptsByMonth[month] = 0;
-      }
-
-      attempts.forEach((attempt) => {
-        const month = attempt.startedAt.getMonth();
-        attemptsByMonth[month]++;
-      });
-
-      data = Object.entries(attemptsByMonth).map(([month, count]) => ({
-        label: monthNames[parseInt(month)],
-        value: count,
-      }));
-    }
-
-    res.json({
-      success: true,
-      data,
+    return res.status(400).json({
+      success: false,
+      message: 'Provide view=day with year and month, or view=month with year, or filter (all/today/yesterday/week/month).',
     });
   } catch (error) {
     console.error('Error fetching quiz attempts chart data:', error);
