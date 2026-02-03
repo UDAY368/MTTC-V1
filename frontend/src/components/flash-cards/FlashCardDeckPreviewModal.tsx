@@ -69,7 +69,10 @@ export function FlashCardDeckPreviewModal({ dayDeck, onClose, courseId, dayId, o
 
   const handleEdit = () => {
     onClose();
-    router.push(`/dashboard/flash-decks/${dayDeck.deck.id}/edit`);
+    const editUrl = courseId && dayId
+      ? `/dashboard/flash-decks/${dayDeck.deck.id}/edit?courseId=${courseId}&dayId=${dayId}`
+      : `/dashboard/flash-decks/${dayDeck.deck.id}/edit`;
+    router.push(editUrl);
   };
 
   const handleRemove = async () => {

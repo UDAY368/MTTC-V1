@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,10 @@ interface Question {
 export default function EditQuizPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const quizId = params.id as string;
+  const courseId = searchParams.get('courseId');
+  const dayId = searchParams.get('dayId');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -233,7 +236,11 @@ export default function EditQuizPage() {
         }
       }
 
-      router.push('/dashboard/quizzes');
+      // Redirect back to day resources if opened from day context, else courses
+      const redirectUrl = courseId && dayId
+        ? `/dashboard/courses/${courseId}/days/${dayId}/resources/new?type=QUIZ`
+        : '/dashboard/courses';
+      router.push(redirectUrl);
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred');
     } finally {
@@ -249,11 +256,15 @@ export default function EditQuizPage() {
     );
   }
 
+  const backUrl = courseId && dayId
+    ? `/dashboard/courses/${courseId}/days/${dayId}/resources/new?type=QUIZ`
+    : '/dashboard/courses';
+
   return (
     <div className="space-y-6">
       <Button
         variant="ghost"
-        onClick={() => router.back()}
+        onClick={() => router.push(backUrl)}
         className="mb-4"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />

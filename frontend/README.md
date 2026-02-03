@@ -88,18 +88,11 @@ frontend/
 - Create new course
 - Edit/delete courses
 
-### Quizzes (`/dashboard/quizzes`)
-- List all quizzes
-- Filter by course
-- Copy quiz URL
-- Create/edit/delete quizzes
-
-### Create Quiz (`/dashboard/quizzes/new`)
-- Select course
-- Set quiz details (title, description, duration)
-- Dynamically add questions
-- Configure question types (single/multiple choice)
-- Add options and mark correct answers
+### Quizzes (per day)
+- Quizzes are managed on each day’s resources page (add Quiz resource, then create/edit quizzes for that day).
+- Create Quiz: `/dashboard/quizzes/new` (typically opened with `courseId` and `dayId` from a day).
+- Edit Quiz: `/dashboard/quizzes/[id]/edit` (from day context, returns to day resources after save).
+- Set quiz details (title, description, duration), add questions, single/multiple choice, mark correct answers.
 
 ## Design Philosophy
 

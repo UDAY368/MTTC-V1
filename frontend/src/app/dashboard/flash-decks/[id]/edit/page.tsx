@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
@@ -15,7 +15,11 @@ import { ArrowLeft, Loader2, Plus, Trash2, Layers, ChevronDown, ChevronUp, Check
 export default function EditFlashDeckPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+  const courseId = searchParams.get('courseId') ?? '';
+  const dayId = searchParams.get('dayId') ?? '';
+  const backUrl = courseId && dayId ? `/dashboard/courses/${courseId}/days/${dayId}` : '/dashboard/courses';
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -130,7 +134,7 @@ export default function EditFlashDeckPage() {
     return (
       <div className="space-y-4">
         <Button variant="ghost" asChild>
-          <Link href="/dashboard/courses">
+          <Link href={backUrl}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Link>
@@ -143,7 +147,7 @@ export default function EditFlashDeckPage() {
   return (
     <div className="space-y-6">
       <Button variant="ghost" asChild className="mb-4">
-        <Link href="/dashboard/courses">
+        <Link href={backUrl}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Link>
@@ -283,6 +287,13 @@ export default function EditFlashDeckPage() {
           </Card>
         </motion.div>
 
+        {loading && (
+          <div className="text-sm text-muted-foreground flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border/50">
+            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+            Saving deck…
+          </div>
+        )}
+
         {showSuccess && (
           <div className="text-sm text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950/50 border border-green-200 dark:border-green-800 p-3 rounded-md flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -298,7 +309,7 @@ export default function EditFlashDeckPage() {
 
         <div className="flex gap-4">
           <Button type="button" variant="outline" asChild disabled={loading}>
-            <Link href="/dashboard/courses">Cancel</Link>
+            <Link href={backUrl}>Cancel</Link>
           </Button>
           <Button type="submit" disabled={loading}>
             {loading ? (

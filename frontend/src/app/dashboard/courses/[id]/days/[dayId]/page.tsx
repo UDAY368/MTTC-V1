@@ -1338,7 +1338,7 @@ function ResourcePreviewModal({ resource, day, onClose }: {
                           key={dfd.id}
                           variant="outline"
                           size="sm"
-                          onClick={() => router.push(`/dashboard/flash-decks/${dfd.deck.id}/edit`)}
+                          onClick={() => router.push(`/dashboard/flash-decks/${dfd.deck.id}/edit?courseId=${courseId}&dayId=${dayId}`)}
                         >
                           {dfd.deck.title} ({dfd.deck._count?.cards ?? 0} cards)
                         </Button>

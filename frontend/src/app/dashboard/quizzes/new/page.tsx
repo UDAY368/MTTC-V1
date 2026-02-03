@@ -315,10 +315,10 @@ export default function NewQuizPage() {
       setShowSuccess(true);
       setLoading(false);
 
-      // Redirect: back to day's Quiz resource if we came from there, else quizzes list
+      // Redirect: back to day's Quiz resource if we came from there, else courses
       const redirectUrl = dayIdFromQuery && courseId
         ? `/dashboard/courses/${courseId}/days/${dayIdFromQuery}/resources/new?type=QUIZ`
-        : '/dashboard/quizzes';
+        : '/dashboard/courses';
       setTimeout(() => {
         router.push(redirectUrl);
       }, 2000);
@@ -350,7 +350,7 @@ export default function NewQuizPage() {
   const fromDayContext = Boolean(dayIdFromQuery && courseIdFromQuery);
   const backUrl = fromDayContext && courseId
     ? `/dashboard/courses/${courseId}/days/${dayIdFromQuery}/resources/new?type=QUIZ`
-    : '/dashboard/quizzes';
+    : '/dashboard/courses';
 
   return (
     <div className="space-y-6">

@@ -155,7 +155,7 @@ export function QuizResourceAttachView({ dayId, courseId, onSuccess, children }:
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => router.push(`/dashboard/quizzes/${dq.quiz.id}/edit`)}
+                            onClick={() => router.push(`/dashboard/quizzes/${dq.quiz.id}/edit?courseId=${courseId}&dayId=${dayId}`)}
                             title="Edit quiz"
                           >
                             <Edit className="h-4 w-4" />

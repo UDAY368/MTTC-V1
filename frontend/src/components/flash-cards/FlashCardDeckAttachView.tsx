@@ -152,7 +152,7 @@ export function FlashCardDeckAttachView({ dayId, courseId, onSuccess, children }
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => router.push(`/dashboard/flash-decks/${dfd.deck.id}/edit`)}
+                            onClick={() => router.push(`/dashboard/flash-decks/${dfd.deck.id}/edit?courseId=${courseId}&dayId=${dayId}`)}
                             title="Edit deck"
                           >
                             <Edit className="h-4 w-4" />
