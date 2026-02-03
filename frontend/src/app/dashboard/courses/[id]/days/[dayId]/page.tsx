@@ -639,6 +639,8 @@ export default function DayDetailPage() {
           <ResourcePreviewModal
             resource={previewResource}
             day={day}
+            courseId={courseId}
+            dayId={dayId}
             onClose={() => setPreviewResource(null)}
           />
         )}
@@ -940,9 +942,11 @@ function FlashCardResourceModal({ dayId, courseId, onClose, onSuccess }: {
 }
 
 // Resource Preview Modal Component
-function ResourcePreviewModal({ resource, day, onClose }: {
+function ResourcePreviewModal({ resource, day, courseId, dayId, onClose }: {
   resource: Resource;
   day: Day | null;
+  courseId: string;
+  dayId: string;
   onClose: () => void;
 }) {
   const router = useRouter();
