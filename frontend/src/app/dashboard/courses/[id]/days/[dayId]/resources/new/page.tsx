@@ -17,6 +17,18 @@ import { FlashCardDeckAttachView } from '@/components/flash-cards/FlashCardDeckA
 
 type ResourceType = 'VIDEO' | 'NOTES' | 'BRIEF_NOTES' | 'FLASH_CARDS' | 'SHORT_QUESTIONS' | 'ASSIGNMENT' | 'GLOSSARY' | 'RECOMMENDATION' | 'QUIZ';
 
+const DEFAULT_TITLE_BY_TYPE: Record<ResourceType, string> = {
+  VIDEO: 'Video',
+  NOTES: 'Key Summary',
+  BRIEF_NOTES: 'Brief Notes',
+  FLASH_CARDS: 'Flash Cards',
+  SHORT_QUESTIONS: 'Short Questions',
+  ASSIGNMENT: 'Assignments',
+  GLOSSARY: 'Glossary',
+  RECOMMENDATION: 'Recommendations',
+  QUIZ: 'Question Bank',
+};
+
 export default function NewResourcePage() {
   const router = useRouter();
   const params = useParams();
@@ -43,8 +55,8 @@ export default function NewResourcePage() {
   const [creatingFlashCardResource, setCreatingFlashCardResource] = useState(false);
   const [flashCardResourceCreatedSuccess, setFlashCardResourceCreatedSuccess] = useState(false);
 
-  // Common fields
-  const [title, setTitle] = useState('');
+  // Common fields — default title by resource type (user can edit)
+  const [title, setTitle] = useState(() => DEFAULT_TITLE_BY_TYPE[resourceType] ?? resourceType.replace(/_/g, ' '));
 
   // VIDEO fields
   const [videoUrl, setVideoUrl] = useState('');

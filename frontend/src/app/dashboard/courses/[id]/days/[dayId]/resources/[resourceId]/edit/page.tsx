@@ -12,6 +12,18 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
+const DEFAULT_TITLE_BY_TYPE: Record<string, string> = {
+  VIDEO: 'Video',
+  NOTES: 'Key Summary',
+  BRIEF_NOTES: 'Brief Notes',
+  FLASH_CARDS: 'Flash Cards',
+  SHORT_QUESTIONS: 'Short Questions',
+  ASSIGNMENT: 'Assignments',
+  GLOSSARY: 'Glossary',
+  RECOMMENDATION: 'Recommendations',
+  QUIZ: 'Question Bank',
+};
+
 export default function EditResourcePage() {
   const router = useRouter();
   const params = useParams();
@@ -67,7 +79,7 @@ export default function EditResourcePage() {
       const response = await api.get(`/resources/${resourceId}`);
       const resource = response.data.data;
 
-      setTitle(resource.title || '');
+      setTitle(resource.title || DEFAULT_TITLE_BY_TYPE[resource.type] || resource.type?.replace(/_/g, ' ') || '');
       setResourceType(resource.type);
 
       switch (resource.type) {
