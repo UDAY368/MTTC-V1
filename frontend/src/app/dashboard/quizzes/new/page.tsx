@@ -40,8 +40,8 @@ export default function NewQuizPage() {
   const [courseId, setCourseId] = useState(courseIdFromQuery);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [totalQuestionsInput, setTotalQuestionsInput] = useState('');
-  const [durationMinutes, setDurationMinutes] = useState(30);
+  const [totalQuestionsInput, setTotalQuestionsInput] = useState('5');
+  const [durationMinutes, setDurationMinutes] = useState(15);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -83,16 +83,19 @@ export default function NewQuizPage() {
   };
 
   const addQuestion = () => {
+    const ts = Date.now();
     setQuestions([
       ...questions,
       {
-        id: `temp-${Date.now()}`,
+        id: `temp-${ts}`,
         text: '',
         textTe: '',
         type: 'SINGLE_CHOICE',
         options: [
-          { id: `opt-${Date.now()}-1`, text: '', textTe: '', isCorrect: false },
-          { id: `opt-${Date.now()}-2`, text: '', textTe: '', isCorrect: false },
+          { id: `opt-${ts}-1`, text: '', textTe: '', isCorrect: false },
+          { id: `opt-${ts}-2`, text: '', textTe: '', isCorrect: false },
+          { id: `opt-${ts}-3`, text: '', textTe: '', isCorrect: false },
+          { id: `opt-${ts}-4`, text: '', textTe: '', isCorrect: false },
         ],
       },
     ]);
@@ -436,7 +439,7 @@ export default function NewQuizPage() {
                     const v = e.target.value;
                     if (v === '' || /^\d+$/.test(v)) setTotalQuestionsInput(v);
                   }}
-                  placeholder="0"
+                  placeholder="5"
                   disabled={loading}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
@@ -478,28 +481,37 @@ export default function NewQuizPage() {
                     key={question.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 border border-border rounded-lg space-y-4"
+                    className={`rounded-xl border transition-all duration-200 shadow-sm overflow-hidden ${
+                      isCollapsed ? 'border-border bg-card/50' : 'border-border bg-card shadow-md ring-1 ring-black/5'
+                    }`}
                   >
-                    {/* Question Header - Always visible */}
-                    <div id={`question-${question.id}`} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Label className="text-base font-semibold">Question {qIndex + 1}</Label>
+                    {/* Question Header - click anywhere to collapse/expand */}
+                    <div
+                      id={`question-${question.id}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => toggleQuestionCollapse(question.id)}
+                      onKeyDown={(e) => e.key === 'Enter' && toggleQuestionCollapse(question.id)}
+                      className="flex items-center justify-between gap-3 p-4 cursor-pointer select-none hover:bg-muted/40 active:bg-muted/60 transition-colors border-l-4 border-l-primary/60"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Label className="text-base font-semibold shrink-0">Question {qIndex + 1}</Label>
                         {question.text && (
                           <span className="text-sm text-muted-foreground truncate max-w-[300px]">
                             {question.text.length > 50 ? question.text.substring(0, 50) + '...' : question.text}
                           </span>
                         )}
-                        <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                        <span className="text-xs bg-muted px-2 py-0.5 rounded shrink-0">
                           {question.options.length} options
                         </span>
                         {hasCorrectAnswer(question) && (
-                          <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded flex items-center gap-1">
+                          <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded flex items-center gap-1 shrink-0">
                             <CheckCircle2 className="h-3 w-3" />
                             Answer selected
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <Button
                           type="button"
                           variant="ghost"
@@ -532,7 +544,7 @@ export default function NewQuizPage() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="space-y-4"
+                        className="space-y-4 px-4 pb-4 pt-0 border-t border-border/60"
                       >
                         {/* Question Text - English and Telugu side by side */}
                         <div className="space-y-2">
@@ -579,50 +591,56 @@ export default function NewQuizPage() {
                           </Select>
                         </div>
 
-                        {/* Options - English and Telugu side by side */}
+                        {/* Options - single row: label + inputs */}
                         <div className="space-y-3">
                           <Label>Options *</Label>
                           {question.options.map((option, oIndex) => (
-                            <div key={option.id} className="p-3 bg-muted/30 rounded-md space-y-2">
-                              <div className="flex items-center gap-2">
+                            <div
+                              key={option.id}
+                              className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20 hover:bg-muted/30 transition-colors"
+                            >
+                              <div className="flex items-center gap-2 shrink-0 sm:w-[140px]">
                                 <input
                                   type={question.type === 'SINGLE_CHOICE' ? 'radio' : 'checkbox'}
                                   checked={option.isCorrect}
                                   onChange={() => toggleCorrectOption(question.id, option.id)}
-                                  className="h-4 w-4"
+                                  className="h-4 w-4 shrink-0"
                                   disabled={loading}
                                 />
-                                <span className="text-sm font-medium">Option {oIndex + 1}</span>
+                                <span className="text-sm font-medium whitespace-nowrap">Option {oIndex + 1}</span>
                                 {option.isCorrect && (
-                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Correct</span>
-                                )}
-                                {question.options.length > 2 && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => deleteOption(question.id, option.id)}
-                                    disabled={loading}
-                                    className="ml-auto h-6 w-6"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
+                                  <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded shrink-0">Correct</span>
                                 )}
                               </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-6">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 min-w-0 sm:pl-2">
                                 <Input
                                   value={option.text}
                                   onChange={(e) => updateOption(question.id, option.id, 'text', e.target.value)}
                                   placeholder={`English: Option ${oIndex + 1}`}
                                   disabled={loading}
+                                  className="h-9"
                                 />
                                 <Input
                                   value={option.textTe}
                                   onChange={(e) => updateOption(question.id, option.id, 'textTe', e.target.value)}
                                   placeholder={`Telugu: ఎంపిక ${oIndex + 1}`}
                                   disabled={loading}
+                                  className="h-9"
                                 />
                               </div>
+                              {question.options.length > 2 && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => deleteOption(question.id, option.id)}
+                                  disabled={loading}
+                                  className="h-8 w-8 shrink-0 border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-destructive/50"
+                                  aria-label="Remove option"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           ))}
                           <Button

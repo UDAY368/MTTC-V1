@@ -1126,13 +1126,23 @@ function ResourcePreviewModal({ resource, day, onClose }: {
                   .rich-text-content p {
                     margin-bottom: 1em;
                   }
-                  .rich-text-content ul,
                   .rich-text-content ol {
-                    margin-left: 1.5em;
+                    list-style-type: decimal;
+                    list-style-position: outside;
+                    margin-left: 0;
+                    padding-left: 1.5em;
+                    margin-bottom: 1em;
+                  }
+                  .rich-text-content ul {
+                    list-style-type: disc;
+                    list-style-position: outside;
+                    margin-left: 0;
+                    padding-left: 1.5em;
                     margin-bottom: 1em;
                   }
                   .rich-text-content li {
                     margin-bottom: 0.5em;
+                    display: list-item;
                   }
                   .rich-text-content strong {
                     font-weight: 600;
@@ -1207,13 +1217,23 @@ function ResourcePreviewModal({ resource, day, onClose }: {
                   .rich-text-content p {
                     margin-bottom: 1em;
                   }
-                  .rich-text-content ul,
                   .rich-text-content ol {
-                    margin-left: 1.5em;
+                    list-style-type: decimal;
+                    list-style-position: outside;
+                    margin-left: 0;
+                    padding-left: 1.5em;
+                    margin-bottom: 1em;
+                  }
+                  .rich-text-content ul {
+                    list-style-type: disc;
+                    list-style-position: outside;
+                    margin-left: 0;
+                    padding-left: 1.5em;
                     margin-bottom: 1em;
                   }
                   .rich-text-content li {
                     margin-bottom: 0.5em;
+                    display: list-item;
                   }
                   .rich-text-content strong {
                     font-weight: 600;

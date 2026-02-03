@@ -637,14 +637,22 @@ export function ContentViewer({
     >
       {/* Accent bar */}
       <div className="h-1 w-full shrink-0 rounded-t-2xl bg-gradient-to-r from-primary/50 via-primary to-primary/50" aria-hidden />
-      {/* Header: course name — extra padding on mobile for visibility */}
-      <header className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card/50 px-6 py-4 sm:px-7 sm:py-3.5 md:px-8 md:py-4 md:gap-4 lg:px-9 lg:gap-4">
+      {/* Header: course name + Day chip (updates with user selection) — works on mobile and desktop */}
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border/40 bg-card/50 px-6 py-4 sm:gap-3 sm:px-7 sm:py-3.5 md:gap-4 md:px-8 md:py-4 lg:px-9 lg:gap-4">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary md:h-10 md:w-10 lg:h-11 lg:w-11">
           <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 md:h-5 md:w-5 lg:h-6 lg:w-6" strokeWidth={1.8} />
         </span>
-        <h1 className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground sm:text-base md:text-lg lg:text-xl">
+        <h1 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-foreground sm:text-base md:text-lg lg:text-xl">
           {courseName}
         </h1>
+        {selectedDayNumber != null && (
+          <span
+            className="inline-flex shrink-0 items-center rounded-full bg-[#4169E1] px-2.5 py-0.5 text-xs font-bold tracking-wide text-white shadow-md sm:px-3 sm:py-1 sm:text-sm md:px-3.5 md:py-1 md:text-sm"
+            aria-label={`Day ${selectedDayNumber}`}
+          >
+            Day {selectedDayNumber}
+          </span>
+        )}
       </header>
       {/* Content area — scrollable on both mobile and desktop; touch momentum on iOS */}
       <div
