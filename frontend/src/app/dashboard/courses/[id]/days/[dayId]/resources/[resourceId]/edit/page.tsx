@@ -17,11 +17,11 @@ const DEFAULT_TITLE_BY_TYPE: Record<string, string> = {
   NOTES: 'Key Summary',
   BRIEF_NOTES: 'Brief Notes',
   FLASH_CARDS: 'Flash Cards',
-  SHORT_QUESTIONS: 'Short Questions',
+  SHORT_QUESTIONS: 'Question Bank',
   ASSIGNMENT: 'Assignments',
   GLOSSARY: 'Glossary',
   RECOMMENDATION: 'Recommendations',
-  QUIZ: 'Question Bank',
+  QUIZ: 'Quiz',
 };
 
 export default function EditResourcePage() {
@@ -521,7 +521,7 @@ export default function EditResourcePage() {
           <CardHeader>
             <CardTitle>Edit Resource</CardTitle>
             <CardDescription>
-              Update {(resourceType === 'NOTES' ? 'key points' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType?.toLowerCase().replace(/_/g, ' '))} resource
+              Update {(resourceType === 'NOTES' ? 'key summary' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType === 'SHORT_QUESTIONS' ? 'question bank' : resourceType?.toLowerCase().replace(/_/g, ' '))} resource
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -734,7 +734,7 @@ export default function EditResourcePage() {
               {/* SHORT_QUESTIONS */}
               {resourceType === 'SHORT_QUESTIONS' && (
                 <div className="space-y-4">
-                  <Label>Short Questions *</Label>
+                  <Label>Question Bank *</Label>
                   {shortQuestions.map((qa, index) => {
                     const isCollapsed = collapsedQuestions.has(index);
                     return (

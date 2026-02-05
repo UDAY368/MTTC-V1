@@ -22,11 +22,11 @@ const DEFAULT_TITLE_BY_TYPE: Record<ResourceType, string> = {
   NOTES: 'Key Summary',
   BRIEF_NOTES: 'Brief Notes',
   FLASH_CARDS: 'Flash Cards',
-  SHORT_QUESTIONS: 'Short Questions',
+  SHORT_QUESTIONS: 'Question Bank',
   ASSIGNMENT: 'Assignments',
   GLOSSARY: 'Glossary',
   RECOMMENDATION: 'Recommendations',
-  QUIZ: 'Question Bank',
+  QUIZ: 'Quiz',
 };
 
 export default function NewResourcePage() {
@@ -660,9 +660,9 @@ export default function NewResourcePage() {
       >
         <Card className="max-w-3xl">
           <CardHeader>
-            <CardTitle>Create {resourceType === 'VIDEO' ? 'Video' : resourceType === 'NOTES' ? 'Key Points' : resourceType === 'BRIEF_NOTES' ? 'Brief Notes' : resourceType === 'SHORT_QUESTIONS' ? 'Short Questions' : resourceType === 'ASSIGNMENT' ? 'Assignment' : resourceType === 'GLOSSARY' ? 'Glossary' : resourceType === 'RECOMMENDATION' ? 'Recommendation' : 'Resource'} Resource</CardTitle>
+            <CardTitle>Create {resourceType === 'VIDEO' ? 'Video' : resourceType === 'NOTES' ? 'Key Summary' : resourceType === 'BRIEF_NOTES' ? 'Brief Notes' : resourceType === 'SHORT_QUESTIONS' ? 'Question Bank' : resourceType === 'ASSIGNMENT' ? 'Assignment' : resourceType === 'GLOSSARY' ? 'Glossary' : resourceType === 'RECOMMENDATION' ? 'Recommendation' : 'Resource'} Resource</CardTitle>
             <CardDescription>
-              Add a new {(resourceType === 'NOTES' ? 'key points' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType.toLowerCase().replace(/_/g, ' '))} resource to this day
+              Add a new {(resourceType === 'NOTES' ? 'key summary' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType === 'SHORT_QUESTIONS' ? 'question bank' : resourceType.toLowerCase().replace(/_/g, ' '))} resource to this day
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -797,7 +797,7 @@ export default function NewResourcePage() {
               {/* SHORT_QUESTIONS */}
               {resourceType === 'SHORT_QUESTIONS' && (
                 <div className="space-y-4">
-                  <Label>Short Questions *</Label>
+                  <Label>Question Bank *</Label>
                   {shortQuestions.map((qa, index) => {
                     const isCollapsed = collapsedQuestions.has(index);
                     return (
@@ -1200,7 +1200,7 @@ export default function NewResourcePage() {
                 transition={{ delay: 0.4 }}
                 className="text-muted-foreground"
               >
-                Your {resourceType === 'VIDEO' ? 'video' : resourceType === 'NOTES' ? 'key points' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType === 'SHORT_QUESTIONS' ? 'short questions' : resourceType === 'ASSIGNMENT' ? 'assignment' : resourceType === 'GLOSSARY' ? 'glossary' : resourceType === 'RECOMMENDATION' ? 'recommendation' : 'resource'} resource has been successfully created and saved.
+                Your {resourceType === 'VIDEO' ? 'video' : resourceType === 'NOTES' ? 'key summary' : resourceType === 'BRIEF_NOTES' ? 'brief notes' : resourceType === 'SHORT_QUESTIONS' ? 'question bank' : resourceType === 'ASSIGNMENT' ? 'assignment' : resourceType === 'GLOSSARY' ? 'glossary' : resourceType === 'RECOMMENDATION' ? 'recommendation' : 'resource'} resource has been successfully created and saved.
               </motion.p>
               <motion.div
                 initial={{ opacity: 0 }}

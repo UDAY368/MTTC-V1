@@ -330,13 +330,13 @@ export default function DayDetailPage() {
       case 'VIDEO':
         return 'Video';
       case 'NOTES':
-        return 'Key Points';
+        return 'Key Summary';
       case 'BRIEF_NOTES':
         return 'Brief Notes';
       case 'FLASH_CARDS':
         return 'Flash Cards';
       case 'SHORT_QUESTIONS':
-        return 'Short Questions';
+        return 'Question Bank';
       case 'ASSIGNMENT':
         return 'Assignment';
       case 'GLOSSARY':
@@ -760,7 +760,20 @@ export default function DayDetailPage() {
   );
 }
 
-// Add Resource Modal Component (simplified - will be expanded)
+// Resource add sequence and labels (premium order)
+const RESOURCE_TYPE_SEQUENCE = [
+  { type: 'VIDEO' as const, label: 'Video', description: 'Add a video URL (YouTube/Vimeo)', Icon: Video },
+  { type: 'BRIEF_NOTES' as const, label: 'Brief Notes', description: 'Add brief notes with tables and rich formatting', Icon: FileText },
+  { type: 'NOTES' as const, label: 'Key Summary', description: 'Add key summary with multiple paragraphs', Icon: FileText },
+  { type: 'SHORT_QUESTIONS' as const, label: 'Question Bank', description: 'Add Q&A pairs for practice', Icon: HelpCircle },
+  { type: 'GLOSSARY' as const, label: 'Glossary', description: 'Add words and their meanings', Icon: BookOpen },
+  { type: 'FLASH_CARDS' as const, label: 'Flash Cards', description: 'Create decks (Q&A cards); manage decks like Quiz', Icon: Layers },
+  { type: 'QUIZ' as const, label: 'Quiz', description: 'Add one Quiz resource; attach and manage quizzes inside it', Icon: BookOpen },
+  { type: 'ASSIGNMENT' as const, label: 'Assignments', description: 'Add assignment questions', Icon: ClipboardList },
+  { type: 'RECOMMENDATION' as const, label: 'Recommendation', description: 'Add multiple recommendations (title + content)', Icon: Lightbulb },
+];
+
+// Add Resource Modal — premium sequence and styling
 function AddResourceModal({ dayId, courseId, onClose, onSuccess }: {
   dayId: string;
   courseId: string;
@@ -769,80 +782,57 @@ function AddResourceModal({ dayId, courseId, onClose, onSuccess }: {
 }) {
   const router = useRouter();
 
-  const handleResourceTypeClick = (type: 'VIDEO' | 'NOTES' | 'BRIEF_NOTES' | 'FLASH_CARDS' | 'SHORT_QUESTIONS' | 'ASSIGNMENT' | 'GLOSSARY' | 'RECOMMENDATION' | 'QUIZ') => {
+  const handleResourceTypeClick = (type: typeof RESOURCE_TYPE_SEQUENCE[number]['type']) => {
     onClose();
     router.push(`/dashboard/courses/${courseId}/days/${dayId}/resources/new?type=${type}`);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-card rounded-lg border max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+        className="bg-card rounded-2xl border border-border/80 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <Card>
-          <CardHeader>
+        <Card className="border-0 shadow-none rounded-2xl flex flex-col flex-1 min-h-0">
+          <CardHeader className="shrink-0 border-b border-border/60 bg-muted/30">
             <div className="flex items-center justify-between">
-              <CardTitle>Add Resource</CardTitle>
-              <Button type="button" variant="ghost" size="icon" onClick={onClose}>
+              <div>
+                <CardTitle className="text-lg font-semibold tracking-tight">Add Resource</CardTitle>
+                <CardDescription className="mt-1 text-muted-foreground">
+                  Choose a resource type to add to this day (in recommended sequence)
+                </CardDescription>
+              </div>
+              <Button type="button" variant="ghost" size="icon" onClick={onClose} className="rounded-full h-9 w-9 shrink-0" aria-label="Close">
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <CardDescription>Choose a resource type to add</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-3">
-              {(['VIDEO', 'NOTES', 'BRIEF_NOTES', 'FLASH_CARDS', 'SHORT_QUESTIONS', 'ASSIGNMENT', 'GLOSSARY', 'RECOMMENDATION', 'QUIZ'] as const).map((type) => {
-                const isQuiz = type === 'QUIZ';
-                return (
-                  <Button
-                    key={type}
-                    type="button"
-                    variant="outline"
-                    className="justify-start h-auto p-4"
-                    onClick={() => handleResourceTypeClick(type)}
-                  >
-                    <div className="flex items-center gap-3">
-                      {type === 'VIDEO' && <Video className="h-5 w-5" />}
-                      {type === 'NOTES' && <FileText className="h-5 w-5" />}
-                      {type === 'BRIEF_NOTES' && <FileText className="h-5 w-5" />}
-                      {type === 'FLASH_CARDS' && <Layers className="h-5 w-5" />}
-                      {type === 'SHORT_QUESTIONS' && <HelpCircle className="h-5 w-5" />}
-                      {type === 'ASSIGNMENT' && <ClipboardList className="h-5 w-5" />}
-                      {type === 'GLOSSARY' && <BookOpen className="h-5 w-5" />}
-                      {type === 'RECOMMENDATION' && <Lightbulb className="h-5 w-5" />}
-                      {type === 'QUIZ' && <BookOpen className="h-5 w-5" />}
-                      <div className="text-left">
-                        <div className="font-medium">
-                          {type === 'VIDEO' && 'Video'}
-                          {type === 'NOTES' && 'Key Points'}
-                          {type === 'BRIEF_NOTES' && 'Brief Notes'}
-                          {type === 'FLASH_CARDS' && 'Flash Cards'}
-                          {type === 'SHORT_QUESTIONS' && 'Short Questions'}
-                          {type === 'ASSIGNMENT' && 'Assignment'}
-                          {type === 'GLOSSARY' && 'Glossary'}
-                          {type === 'RECOMMENDATION' && 'Recommendation'}
-                          {type === 'QUIZ' && 'Quiz'}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {type === 'VIDEO' && 'Add a video URL (YouTube/Vimeo)'}
-                          {type === 'NOTES' && 'Add key points with multiple paragraphs'}
-                          {type === 'BRIEF_NOTES' && 'Add brief notes with tables and rich formatting'}
-                          {type === 'FLASH_CARDS' && 'Create decks (Q&A cards); manage decks like Quiz'}
-                          {type === 'SHORT_QUESTIONS' && 'Add a simple Q&A pair'}
-                          {type === 'ASSIGNMENT' && 'Add an assignment question'}
-                          {type === 'GLOSSARY' && 'Add words and their meanings'}
-                          {type === 'RECOMMENDATION' && 'Add multiple recommendations (title + content)'}
-                          {type === 'QUIZ' && 'Add one Quiz resource; attach and manage quizzes inside it'}
-                        </div>
-                      </div>
-                    </div>
-                  </Button>
-                );
-              })}
+          <CardContent className="flex-1 overflow-y-auto p-4 sm:p-5">
+            <div className="grid gap-2">
+              {RESOURCE_TYPE_SEQUENCE.map((item, index) => (
+                <motion.button
+                  key={item.type}
+                  type="button"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.03, duration: 0.2 }}
+                  onClick={() => handleResourceTypeClick(item.type)}
+                  className="group flex items-center gap-4 rounded-xl border border-border/70 bg-card p-4 text-left transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-md active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                    <item.Icon className="h-5 w-5" strokeWidth={1.8} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-foreground">{item.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
+                  </div>
+                  <ChevronDown className="h-4 w-4 shrink-0 -rotate-90 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
+                </motion.button>
+              ))}
             </div>
           </CardContent>
         </Card>

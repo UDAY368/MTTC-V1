@@ -44,10 +44,10 @@ interface ContentViewerProps {
 function ResourceTypeLabel(type: string): string {
   const map: Record<string, string> = {
     VIDEO: 'Video',
-    NOTES: 'Key Points',
+    NOTES: 'Key Summary',
     BRIEF_NOTES: 'Brief Notes',
     FLASH_CARDS: 'Flash Cards',
-    SHORT_QUESTIONS: 'Short Questions',
+    SHORT_QUESTIONS: 'Question Bank',
     ASSIGNMENT: 'Assignment',
     GLOSSARY: 'Glossary',
     RECOMMENDATION: 'Reference',
