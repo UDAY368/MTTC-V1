@@ -70,10 +70,10 @@ export function AboutCourseHero({
             </p>
           )}
           {courseId && (
-            <div className="pt-1">
+            <div className="flex justify-center pt-1 sm:justify-start">
               <Link
                 href={`/course/${courseId}/learn`}
-                className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-5 sm:py-2.5 sm:text-sm md:text-base"
+                className="inline-flex items-center rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-5 sm:py-2.5 sm:text-sm md:text-base"
               >
                 Start learning
               </Link>

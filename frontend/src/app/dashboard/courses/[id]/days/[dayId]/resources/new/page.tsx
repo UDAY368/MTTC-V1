@@ -978,7 +978,7 @@ export default function NewResourcePage() {
                               )}
                             </div>
                             {!isCollapsed && (
-                              <div className="space-y-3 pl-10">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-10">
                                 <div className="space-y-2">
                                   <Label htmlFor={`glossary-word-${index}`}>Word *</Label>
                                   <Input

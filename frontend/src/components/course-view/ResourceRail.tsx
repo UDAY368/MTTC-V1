@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, FolderOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
 import type { DayItem } from './types';
 
 const RAIL_WIDTH_EXPANDED = 220;
@@ -32,7 +32,7 @@ function typeLabel(type: string): string {
     SHORT_QUESTIONS: 'Short Questions',
     ASSIGNMENT: 'Assignment',
     GLOSSARY: 'Glossary',
-    RECOMMENDATION: 'Recommendation',
+    RECOMMENDATION: 'Reference',
     QUIZ: 'Quiz',
   };
   return map[type] ?? type;
@@ -292,11 +292,25 @@ export function ResourceRail({
 
 export { RAIL_WIDTH_COLLAPSED, RAIL_WIDTH_EXPANDED };
 
-/** Duration (ms) to show tooltip after touch on mobile */
-const MOBILE_TOOLTIP_DURATION_MS = 2200;
+/** Pastel theme per resource type for mobile strip cards (bg + icon/text color). */
+function getMobileCardTheme(type: string): { bg: string; fg: string } {
+  const themes: Record<string, { bg: string; fg: string }> = {
+    VIDEO: { bg: 'bg-emerald-100/90 dark:bg-emerald-950/50', fg: 'text-emerald-800 dark:text-emerald-200' },
+    NOTES: { bg: 'bg-slate-100/90 dark:bg-slate-800/50', fg: 'text-slate-700 dark:text-slate-200' },
+    BRIEF_NOTES: { bg: 'bg-violet-100/90 dark:bg-violet-950/50', fg: 'text-violet-800 dark:text-violet-200' },
+    FLASH_CARDS: { bg: 'bg-rose-100/90 dark:bg-rose-950/50', fg: 'text-rose-800 dark:text-rose-200' },
+    SHORT_QUESTIONS: { bg: 'bg-amber-100/90 dark:bg-amber-950/50', fg: 'text-amber-800 dark:text-amber-200' },
+    ASSIGNMENT: { bg: 'bg-amber-50/95 dark:bg-amber-950/40', fg: 'text-amber-900/90 dark:text-amber-200' },
+    GLOSSARY: { bg: 'bg-sky-100/90 dark:bg-sky-950/50', fg: 'text-sky-800 dark:text-sky-200' },
+    RECOMMENDATION: { bg: 'bg-fuchsia-100/90 dark:bg-fuchsia-950/50', fg: 'text-fuchsia-800 dark:text-fuchsia-200' },
+    QUIZ: { bg: 'bg-blue-100/90 dark:bg-blue-950/50', fg: 'text-blue-800 dark:text-blue-200' },
+    dayQuiz: { bg: 'bg-blue-100/90 dark:bg-blue-950/50', fg: 'text-blue-800 dark:text-blue-200' },
+  };
+  return themes[type] ?? { bg: 'bg-muted/80', fg: 'text-muted-foreground' };
+}
 
-/** Mobile-only: resource icon button with portal tooltip (above strip). Touch: tap shows tooltip for a few seconds. */
-function MobileResourceButton({
+/** Mobile-only: single resource card — icon + label (tooltip name). Premium tap animation. */
+function MobileResourceCard({
   item,
   isActive,
   onSelectItem,
@@ -305,108 +319,30 @@ function MobileResourceButton({
   isActive: boolean;
   onSelectItem: (item: DayItem) => void;
 }) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipRect, setTooltipRect] = useState({ x: 0, y: 0 });
-  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ignoreBlurRef = useRef(false);
   const type = item.type === 'dayQuiz' ? 'dayQuiz' : item.resource.type;
-  const label = itemLabel(item);
-
-  const updateRect = useCallback(() => {
-    const el = buttonRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    setTooltipRect({ x: r.left + r.width / 2, y: r.top - 8 });
-  }, []);
-
-  const handleOpen = useCallback(() => {
-    updateRect();
-    setShowTooltip(true);
-  }, [updateRect]);
-
-  const handleClose = useCallback(() => {
-    setShowTooltip(false);
-    ignoreBlurRef.current = false;
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-  }, []);
-
-  /** On tap (mobile): show tooltip, select item, keep tooltip visible for MOBILE_TOOLTIP_DURATION_MS then hide. */
-  const handleClick = useCallback(() => {
-    updateRect();
-    setShowTooltip(true);
-    onSelectItem(item);
-    ignoreBlurRef.current = true;
-    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-    closeTimeoutRef.current = setTimeout(() => {
-      closeTimeoutRef.current = null;
-      setShowTooltip(false);
-      ignoreBlurRef.current = false;
-    }, MOBILE_TOOLTIP_DURATION_MS);
-  }, [updateRect, onSelectItem, item]);
-
-  const handleBlur = useCallback(() => {
-    if (ignoreBlurRef.current) return;
-    handleClose();
-  }, [handleClose]);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!showTooltip || !buttonRef.current) return;
-    const onScrollOrResize = () => updateRect();
-    window.addEventListener('scroll', onScrollOrResize, true);
-    window.addEventListener('resize', onScrollOrResize);
-    return () => {
-      window.removeEventListener('scroll', onScrollOrResize, true);
-      window.removeEventListener('resize', onScrollOrResize);
-    };
-  }, [showTooltip, updateRect]);
-
-  const tooltipEl =
-    typeof document !== 'undefined' && showTooltip
-      ? createPortal(
-          <div
-            role="tooltip"
-            className="fixed z-[9999] max-w-[220px] -translate-x-1/2 -translate-y-full rounded-xl border border-border/60 bg-card px-3 py-2 text-sm font-medium text-foreground shadow-xl ring-1 ring-black/5"
-            style={{ left: tooltipRect.x, top: tooltipRect.y }}
-          >
-            <span className="line-clamp-2 block">{label}</span>
-          </div>,
-          document.body
-        )
-      : null;
+  const label = type === 'RECOMMENDATION' ? 'Reference' : itemLabel(item);
+  const theme = getMobileCardTheme(type);
 
   return (
-    <>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={handleClick}
-        onMouseEnter={handleOpen}
-        onMouseLeave={handleClose}
-        onFocus={handleOpen}
-        onBlur={handleBlur}
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-          isActive
-            ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30'
-            : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
-        }`}
-        aria-label={label}
-        title={label}
-        aria-current={isActive ? 'true' : undefined}
-      >
-        <TypeIcon type={type} className={`h-5 w-5 ${isActive ? 'text-primary-foreground' : ''}`} />
-      </button>
-      {tooltipEl}
-    </>
+    <motion.button
+      type="button"
+      onClick={() => onSelectItem(item)}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      className={`group relative flex w-full flex-col items-center justify-center gap-1 rounded-xl border border-transparent px-2 py-1.5 text-center shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+        theme.bg
+      } ${theme.fg} ${isActive ? 'ring-2 ring-primary/40 shadow-md' : 'hover:shadow-md active:shadow'}`}
+      aria-label={label}
+      title={label}
+      aria-current={isActive ? 'true' : undefined}
+    >
+      <span className="flex shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4">
+        <TypeIcon type={type} className={`h-4 w-4 shrink-0 ${theme.fg}`} />
+      </span>
+      <span className={`line-clamp-2 text-center text-[10px] font-semibold leading-tight ${theme.fg}`} title={label}>
+        {label}
+      </span>
+    </motion.button>
   );
 }
 
@@ -417,52 +353,44 @@ export interface ResourceStripMobileProps {
 }
 
 /**
- * Mobile-only resource strip: placed below Day strip, above ContentViewer. Icons left-aligned + tooltip; down arrow collapses to single row, up arrow expands.
+ * Mobile-only resource strip: 3-column grid of cards with icon + label (tooltip name), premium tap animation.
+ * Placed below Day strip, above ContentViewer. lg:hidden — not shown on desktop.
  */
 export function ResourceStripMobile({ items, selectedItem, onSelectItem }: ResourceStripMobileProps) {
-  const [collapsed, setCollapsed] = useState(false);
   return (
     <div
       className="flex shrink-0 items-start justify-between gap-2 border-b border-border/40 bg-card/95 px-3 py-2 mt-[10px] mb-[30px] lg:hidden"
       aria-label="Resources"
     >
-      <div
-        className={`flex min-w-0 flex-1 items-center justify-start gap-1.5 py-1 ${
-          collapsed ? 'overflow-x-auto overflow-y-hidden' : 'flex-wrap gap-y-1.5'
-        }`}
-      >
+      <div className="grid w-full grid-cols-3 gap-2 py-1">
         {items.length === 0 ? (
-          <p className="py-1 text-[10px] text-muted-foreground sm:text-xs">No resources for this day.</p>
+          <p className="col-span-3 py-2 text-center text-[10px] text-muted-foreground sm:text-xs">
+            No resources for this day.
+          </p>
         ) : (
-          items.map((item) => {
+          items.map((item, index) => {
             const isActive =
               selectedItem &&
               ((item.type === 'resource' && selectedItem.type === 'resource' && selectedItem.id === item.id) ||
                 (item.type === 'dayQuiz' && selectedItem.type === 'dayQuiz' && selectedItem.id === item.id));
             return (
-              <MobileResourceButton
+              <motion.div
                 key={item.type + item.id}
-                item={item}
-                isActive={!!isActive}
-                onSelectItem={(i) => onSelectItem(i)}
-              />
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03, duration: 0.2 }}
+                className="min-w-0"
+              >
+                <MobileResourceCard
+                  item={item}
+                  isActive={!!isActive}
+                  onSelectItem={(i) => onSelectItem(i)}
+                />
+              </motion.div>
             );
           })
         )}
       </div>
-      <button
-        type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/70 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        aria-label={collapsed ? 'Expand resources' : 'Collapse resources'}
-        title={collapsed ? 'Expand resources' : 'Collapse resources'}
-      >
-        {collapsed ? (
-          <ChevronUp className="h-5 w-5" strokeWidth={2} />
-        ) : (
-          <ChevronDown className="h-5 w-5" strokeWidth={2} />
-        )}
-      </button>
     </div>
   );
 }

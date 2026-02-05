@@ -50,7 +50,7 @@ function ResourceTypeLabel(type: string): string {
     SHORT_QUESTIONS: 'Short Questions',
     ASSIGNMENT: 'Assignment',
     GLOSSARY: 'Glossary',
-    RECOMMENDATION: 'Recommendation',
+    RECOMMENDATION: 'Reference',
     QUIZ: 'Quiz',
   };
   return map[type] ?? type;
