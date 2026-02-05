@@ -560,24 +560,25 @@ export default function EditResourcePage() {
                   {noteParagraphs.map((para, index) => {
                     const isCollapsed = collapsedParagraphs.has(index);
                     return (
-                      <Card key={index} className="border-l-4 border-l-primary">
+                      <Card key={index} className="border-l-4 border-l-primary overflow-hidden">
                         <div className="p-4">
-                          <div className="flex items-center justify-between mb-3">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggleParagraphCollapse(index)}
+                            onKeyDown={(e) => e.key === 'Enter' && toggleParagraphCollapse(index)}
+                            className="flex items-center justify-between mb-3 cursor-pointer select-none rounded-lg py-1 -mx-1 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-200"
+                            aria-expanded={!isCollapsed}
+                          >
                             <div className="flex items-center gap-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => toggleParagraphCollapse(index)}
-                                className="h-8 w-8"
-                              >
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
                                 {isCollapsed ? (
                                   <ChevronDown className="h-4 w-4" />
                                 ) : (
                                   <ChevronUp className="h-4 w-4" />
                                 )}
-                              </Button>
-                              <Label className="text-sm font-semibold">
+                              </span>
+                              <Label className="text-sm font-semibold cursor-pointer">
                                 Paragraph {index + 1}
                               </Label>
                             </div>
@@ -586,14 +587,19 @@ export default function EditResourcePage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => removeNoteParagraph(index)}
-                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeNoteParagraph(index);
+                                }}
+                                className="h-8 w-8 shrink-0"
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             )}
                           </div>
-                          {!isCollapsed && (
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ease-out ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'}`}
+                          >
                             <div className="space-y-3 pl-10">
                               <Input
                                 placeholder="Heading (optional)"
@@ -611,7 +617,7 @@ export default function EditResourcePage() {
                                 />
                               </div>
                             </div>
-                          )}
+                          </div>
                         </div>
                       </Card>
                     );
@@ -651,24 +657,25 @@ export default function EditResourcePage() {
                   {flashCards.map((card, index) => {
                     const isCollapsed = collapsedFlashCards.has(index);
                     return (
-                      <Card key={index} className="border-l-4 border-l-primary">
+                      <Card key={index} className="border-l-4 border-l-primary overflow-hidden">
                         <div className="p-4">
-                          <div className="flex items-center justify-between mb-3">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggleFlashCardCollapse(index)}
+                            onKeyDown={(e) => e.key === 'Enter' && toggleFlashCardCollapse(index)}
+                            className="flex items-center justify-between mb-3 cursor-pointer select-none rounded-lg py-1 -mx-1 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-200"
+                            aria-expanded={!isCollapsed}
+                          >
                             <div className="flex items-center gap-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => toggleFlashCardCollapse(index)}
-                                className="h-8 w-8"
-                              >
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
                                 {isCollapsed ? (
                                   <ChevronDown className="h-4 w-4" />
                                 ) : (
                                   <ChevronUp className="h-4 w-4" />
                                 )}
-                              </Button>
-                              <Label className="text-sm font-semibold">
+                              </span>
+                              <Label className="text-sm font-semibold cursor-pointer">
                                 Card {index + 1}
                               </Label>
                             </div>
@@ -677,14 +684,19 @@ export default function EditResourcePage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => removeFlashCard(index)}
-                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFlashCard(index);
+                                }}
+                                className="h-8 w-8 shrink-0"
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             )}
                           </div>
-                          {!isCollapsed && (
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ease-out ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'}`}
+                          >
                             <div className="space-y-3 pl-10">
                               <Input
                                 placeholder="Question (front of card) *"
@@ -702,7 +714,7 @@ export default function EditResourcePage() {
                                 disabled={loading}
                               />
                             </div>
-                          )}
+                          </div>
                         </div>
                       </Card>
                     );
@@ -726,24 +738,25 @@ export default function EditResourcePage() {
                   {shortQuestions.map((qa, index) => {
                     const isCollapsed = collapsedQuestions.has(index);
                     return (
-                      <Card key={index} className="border-l-4 border-l-primary">
+                      <Card key={index} className="border-l-4 border-l-primary overflow-hidden">
                         <div className="p-4">
-                          <div className="flex items-center justify-between mb-3">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggleQuestionCollapse(index)}
+                            onKeyDown={(e) => e.key === 'Enter' && toggleQuestionCollapse(index)}
+                            className="flex items-center justify-between mb-3 cursor-pointer select-none rounded-lg py-1 -mx-1 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-200"
+                            aria-expanded={!isCollapsed}
+                          >
                             <div className="flex items-center gap-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => toggleQuestionCollapse(index)}
-                                className="h-8 w-8"
-                              >
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
                                 {isCollapsed ? (
                                   <ChevronDown className="h-4 w-4" />
                                 ) : (
                                   <ChevronUp className="h-4 w-4" />
                                 )}
-                              </Button>
-                              <Label className="text-sm font-semibold">
+                              </span>
+                              <Label className="text-sm font-semibold cursor-pointer">
                                 Question {index + 1}
                               </Label>
                             </div>
@@ -752,14 +765,19 @@ export default function EditResourcePage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => removeShortQuestion(index)}
-                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeShortQuestion(index);
+                                }}
+                                className="h-8 w-8 shrink-0"
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             )}
                           </div>
-                          {!isCollapsed && (
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ease-out ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'}`}
+                          >
                             <div className="space-y-3 pl-10">
                               <div className="space-y-2">
                                 <Label htmlFor={`question-${index}`}>Question *</Label>
@@ -786,7 +804,7 @@ export default function EditResourcePage() {
                                 />
                               </div>
                             </div>
-                          )}
+                          </div>
                         </div>
                       </Card>
                     );
@@ -810,24 +828,25 @@ export default function EditResourcePage() {
                   {assignmentQuestions.map((aq, index) => {
                     const isCollapsed = collapsedAssignments.has(index);
                     return (
-                      <Card key={index} className="border-l-4 border-l-primary">
+                      <Card key={index} className="border-l-4 border-l-primary overflow-hidden">
                         <div className="p-4">
-                          <div className="flex items-center justify-between mb-3">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => toggleAssignmentCollapse(index)}
+                            onKeyDown={(e) => e.key === 'Enter' && toggleAssignmentCollapse(index)}
+                            className="flex items-center justify-between mb-3 cursor-pointer select-none rounded-lg py-1 -mx-1 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-200"
+                            aria-expanded={!isCollapsed}
+                          >
                             <div className="flex items-center gap-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => toggleAssignmentCollapse(index)}
-                                className="h-8 w-8"
-                              >
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
                                 {isCollapsed ? (
                                   <ChevronDown className="h-4 w-4" />
                                 ) : (
                                   <ChevronUp className="h-4 w-4" />
                                 )}
-                              </Button>
-                              <Label className="text-sm font-semibold">
+                              </span>
+                              <Label className="text-sm font-semibold cursor-pointer">
                                 Assignment Question {index + 1}
                               </Label>
                             </div>
@@ -836,14 +855,19 @@ export default function EditResourcePage() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => removeAssignmentQuestion(index)}
-                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeAssignmentQuestion(index);
+                                }}
+                                className="h-8 w-8 shrink-0"
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             )}
                           </div>
-                          {!isCollapsed && (
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ease-out ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'}`}
+                          >
                             <div className="space-y-2 pl-10">
                               <Label htmlFor={`assignment-${index}`}>Question *</Label>
                               <Textarea
@@ -856,7 +880,7 @@ export default function EditResourcePage() {
                                 disabled={loading}
                               />
                             </div>
-                          )}
+                          </div>
                         </div>
                       </Card>
                     );
@@ -879,36 +903,44 @@ export default function EditResourcePage() {
                     {glossaryWords.map((gw, index) => {
                       const isCollapsed = collapsedGlossary.has(index);
                       return (
-                        <Card key={index} className="border-l-4 border-l-primary">
+                        <Card key={index} className="border-l-4 border-l-primary overflow-hidden">
                           <div className="p-4">
-                            <div className="flex items-center justify-between mb-2">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => toggleGlossaryCollapse(index)}
+                              onKeyDown={(e) => e.key === 'Enter' && toggleGlossaryCollapse(index)}
+                              className="flex items-center justify-between mb-2 cursor-pointer select-none rounded-lg py-1 -mx-1 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-200"
+                              aria-expanded={!isCollapsed}
+                            >
                               <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleGlossaryCollapse(index)}
-                                  className="p-1 hover:bg-muted rounded"
-                                >
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
                                   {isCollapsed ? (
-                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    <ChevronDown className="h-4 w-4" />
                                   ) : (
-                                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                    <ChevronUp className="h-4 w-4" />
                                   )}
-                                </button>
-                                <Label className="text-base font-semibold">Word {index + 1}</Label>
+                                </span>
+                                <Label className="text-base font-semibold cursor-pointer">Word {index + 1}</Label>
                               </div>
                               {glossaryWords.length > 1 && (
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => removeGlossaryWord(index)}
-                                  className="h-10 w-10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeGlossaryWord(index);
+                                  }}
+                                  className="h-10 w-10 shrink-0"
                                 >
                                   <Trash2 className="h-6 w-6 text-destructive" />
                                 </Button>
                               )}
                             </div>
-                            {!isCollapsed && (
+                            <div
+                              className={`overflow-hidden transition-all duration-300 ease-out ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'}`}
+                            >
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-10">
                                 <div className="space-y-2">
                                   <Label htmlFor={`glossary-word-${index}`}>Word *</Label>
@@ -934,7 +966,7 @@ export default function EditResourcePage() {
                                   />
                                 </div>
                               </div>
-                            )}
+                            </div>
                           </div>
                         </Card>
                       );
@@ -958,36 +990,44 @@ export default function EditResourcePage() {
                     {recommendations.map((rec, index) => {
                       const isCollapsed = collapsedRecommendations.has(index);
                       return (
-                        <Card key={index} className="border-l-4 border-l-primary">
+                        <Card key={index} className="border-l-4 border-l-primary overflow-hidden">
                           <div className="p-4">
-                            <div className="flex items-center justify-between mb-2">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => toggleRecommendationCollapse(index)}
+                              onKeyDown={(e) => e.key === 'Enter' && toggleRecommendationCollapse(index)}
+                              className="flex items-center justify-between mb-2 cursor-pointer select-none rounded-lg py-1 -mx-1 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-200"
+                              aria-expanded={!isCollapsed}
+                            >
                               <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => toggleRecommendationCollapse(index)}
-                                  className="p-1 hover:bg-muted rounded"
-                                >
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground">
                                   {isCollapsed ? (
-                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    <ChevronDown className="h-4 w-4" />
                                   ) : (
-                                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                    <ChevronUp className="h-4 w-4" />
                                   )}
-                                </button>
-                                <Label className="text-base font-semibold">Recommendation {index + 1}</Label>
+                                </span>
+                                <Label className="text-base font-semibold cursor-pointer">Recommendation {index + 1}</Label>
                               </div>
                               {recommendations.length > 1 && (
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => removeRecommendation(index)}
-                                  className="h-10 w-10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeRecommendation(index);
+                                  }}
+                                  className="h-10 w-10 shrink-0"
                                 >
                                   <Trash2 className="h-6 w-6 text-destructive" />
                                 </Button>
                               )}
                             </div>
-                            {!isCollapsed && (
+                            <div
+                              className={`overflow-hidden transition-all duration-300 ease-out ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'}`}
+                            >
                               <div className="space-y-3 pl-10">
                                 <div className="space-y-2">
                                   <Label htmlFor={`rec-title-${index}`}>Title *</Label>
@@ -1013,7 +1053,7 @@ export default function EditResourcePage() {
                                   />
                                 </div>
                               </div>
-                            )}
+                            </div>
                           </div>
                         </Card>
                       );
