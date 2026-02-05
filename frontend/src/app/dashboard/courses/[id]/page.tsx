@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   ArrowLeft, 
@@ -13,11 +14,11 @@ import {
   Trash2, 
   Calendar,
   FileText,
-  Video,
   BookOpen,
-  HelpCircle,
-  ClipboardList,
-  GripVertical
+  GripVertical,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 
 interface Course {
@@ -46,6 +47,9 @@ export default function CourseDetailPage() {
   const [days, setDays] = useState<Day[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingDayId, setEditingDayId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [savingTitle, setSavingTitle] = useState(false);
 
   useEffect(() => {
     fetchCourseAndDays();
@@ -80,6 +84,36 @@ export default function CourseDetailPage() {
     } catch (error: any) {
       console.error('Error deleting day:', error);
       alert(error.response?.data?.message || 'Failed to delete day');
+    }
+  };
+
+  const startEditingDayTitle = (day: Day) => {
+    setEditingDayId(day.id);
+    setEditingTitle(day.title);
+  };
+
+  const cancelEditingDayTitle = () => {
+    setEditingDayId(null);
+    setEditingTitle('');
+  };
+
+  const saveDayTitle = async (dayId: string, description?: string) => {
+    const title = editingTitle.trim();
+    if (!title) {
+      cancelEditingDayTitle();
+      return;
+    }
+    setSavingTitle(true);
+    try {
+      await api.put(`/days/${dayId}`, { title, description: description ?? '' });
+      setEditingDayId(null);
+      setEditingTitle('');
+      fetchCourseAndDays();
+    } catch (err: any) {
+      console.error('Error updating day title:', err);
+      setError(err.response?.data?.message || 'Failed to update day title');
+    } finally {
+      setSavingTitle(false);
     }
   };
 
@@ -169,10 +203,68 @@ export default function CourseDetailPage() {
                       <div className="mt-1">
                         <GripVertical className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-xl flex items-center gap-2">
-                          {day.title}
-                        </CardTitle>
+                      <div className="flex-1 min-w-0">
+                        {editingDayId === day.id ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Input
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveDayTitle(day.id, day.description);
+                                if (e.key === 'Escape') cancelEditingDayTitle();
+                              }}
+                              onBlur={() => {
+                                if (editingTitle.trim() && editingTitle.trim() !== day.title) {
+                                  saveDayTitle(day.id, day.description);
+                                } else {
+                                  cancelEditingDayTitle();
+                                }
+                              }}
+                              disabled={savingTitle}
+                              className="text-xl font-semibold h-10 max-w-md"
+                              autoFocus
+                              aria-label="Edit day title"
+                            />
+                            <div className="flex gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-primary"
+                                onClick={() => saveDayTitle(day.id, day.description)}
+                                disabled={savingTitle || !editingTitle.trim()}
+                                aria-label="Save title"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={cancelEditingDayTitle}
+                                disabled={savingTitle}
+                                aria-label="Cancel"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <CardTitle className="text-xl font-semibold tracking-tight flex items-center gap-2">
+                            <span className="min-w-0 truncate">{day.title}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
+                              onClick={() => startEditingDayTitle(day)}
+                              aria-label="Edit day title"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </CardTitle>
+                        )}
                         {day.description && (
                           <CardDescription className="mt-1">
                             {day.description}
