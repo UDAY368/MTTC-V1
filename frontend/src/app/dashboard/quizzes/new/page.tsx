@@ -182,33 +182,46 @@ export default function NewQuizPage() {
     const errors: Array<{ questionId: string; questionIndex: number; message: string }> = [];
 
     questions.forEach((question, index) => {
+      const qNum = index + 1;
       if (!question.text.trim()) {
         errors.push({
           questionId: question.id,
           questionIndex: index,
-          message: 'Question text is required'
+          message: `Question ${qNum}: English question text is required`
         });
-        return;
+      }
+      if (!question.textTe.trim()) {
+        errors.push({
+          questionId: question.id,
+          questionIndex: index,
+          message: `Question ${qNum}: Telugu question text (తెలుగు ప్రశ్న) is required`
+        });
       }
 
       if (question.options.length < 2) {
         errors.push({
           questionId: question.id,
           questionIndex: index,
-          message: 'Question must have at least 2 options'
+          message: `Question ${qNum}: At least 2 options are required`
         });
-        return;
-      }
-
-      for (const option of question.options) {
-        if (!option.text.trim()) {
-          errors.push({
-            questionId: question.id,
-            questionIndex: index,
-            message: 'All options must have text'
-          });
-          return;
-        }
+      } else {
+        question.options.forEach((option, oi) => {
+          const optNum = oi + 1;
+          if (!option.text.trim()) {
+            errors.push({
+              questionId: question.id,
+              questionIndex: index,
+              message: `Question ${qNum}, Option ${optNum}: English option text is required`
+            });
+          }
+          if (!option.textTe.trim()) {
+            errors.push({
+              questionId: question.id,
+              questionIndex: index,
+              message: `Question ${qNum}, Option ${optNum}: Telugu option text (ఎంపిక) is required`
+            });
+          }
+        });
       }
 
       const correctCount = question.options.filter(opt => opt.isCorrect).length;
@@ -560,13 +573,14 @@ export default function NewQuizPage() {
                               />
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-sm text-muted-foreground">Telugu (తెలుగు)</Label>
+                              <Label className="text-sm text-muted-foreground">Telugu (తెలుగు) *</Label>
                               <Textarea
                                 value={question.textTe}
                                 onChange={(e) => updateQuestion(question.id, 'textTe', e.target.value)}
                                 placeholder="తెలుగులో ప్రశ్నను నమోదు చేయండి"
                                 rows={2}
                                 disabled={loading}
+                                required
                               />
                             </div>
                           </div>

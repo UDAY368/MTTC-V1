@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Loader2, Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, X, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 
 interface Question {
   id: string;
@@ -43,6 +43,8 @@ export default function EditQuizPage() {
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Array<{ questionId: string; questionIndex: number; message: string }>>([]);
 
   const toggleQuestionCollapse = (questionId: string) => {
     setCollapsedQuestions(prev => {
@@ -182,13 +184,72 @@ export default function EditQuizPage() {
     }
   };
 
+  const validateQuestions = (): { isValid: boolean; errors: Array<{ questionId: string; questionIndex: number; message: string }> } => {
+    const errors: Array<{ questionId: string; questionIndex: number; message: string }> = [];
+    questions.forEach((question, index) => {
+      const qNum = index + 1;
+      if (!question.text.trim()) {
+        errors.push({ questionId: question.id, questionIndex: index, message: `Question ${qNum}: English question text is required` });
+      }
+      if (!question.textTe.trim()) {
+        errors.push({ questionId: question.id, questionIndex: index, message: `Question ${qNum}: Telugu question text (తెలుగు ప్రశ్న) is required` });
+      }
+      if (question.options.length < 2) {
+        errors.push({ questionId: question.id, questionIndex: index, message: `Question ${qNum}: At least 2 options are required` });
+      } else {
+        question.options.forEach((option, oi) => {
+          const optNum = oi + 1;
+          if (!option.text.trim()) {
+            errors.push({ questionId: question.id, questionIndex: index, message: `Question ${qNum}, Option ${optNum}: English option text is required` });
+          }
+          if (!option.textTe.trim()) {
+            errors.push({ questionId: question.id, questionIndex: index, message: `Question ${qNum}, Option ${optNum}: Telugu option text (ఎంపిక) is required` });
+          }
+        });
+      }
+      const correctCount = question.options.filter(opt => opt.isCorrect).length;
+      if (question.type === 'SINGLE_CHOICE') {
+        if (correctCount < 1) {
+          errors.push({ questionId: question.id, questionIndex: index, message: 'Single choice question must have at least one correct answer' });
+        } else if (correctCount > 1) {
+          errors.push({ questionId: question.id, questionIndex: index, message: 'Single choice question must have exactly one correct answer' });
+        }
+      } else {
+        if (correctCount <= 1) {
+          errors.push({ questionId: question.id, questionIndex: index, message: 'Multiple choice question must have more than one correct answer' });
+        }
+      }
+    });
+    return { isValid: errors.length === 0, errors };
+  };
+
+  const navigateToQuestion = (questionId: string) => {
+    setShowValidationModal(false);
+    setCollapsedQuestions(new Set());
+    setTimeout(() => {
+      const element = document.getElementById(`question-${questionId}`);
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setShowValidationModal(false);
+    setValidationErrors([]);
 
     if (!title || !durationMinutes) {
       setError('Please fill in all required fields');
       return;
+    }
+
+    if (questions.length > 0) {
+      const validation = validateQuestions();
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors);
+        setShowValidationModal(true);
+        return;
+      }
     }
 
     setLoading(true);
@@ -369,6 +430,7 @@ export default function EditQuizPage() {
                 const isCollapsed = collapsedQuestions.has(question.id);
                 return (
                   <motion.div
+                    id={`question-${question.id}`}
                     key={question.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -444,13 +506,14 @@ export default function EditQuizPage() {
                               />
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-sm text-muted-foreground">Telugu (తెలుగు)</Label>
+                              <Label className="text-sm text-muted-foreground">Telugu (తెలుగు) *</Label>
                               <Textarea
                                 value={question.textTe}
                                 onChange={(e) => updateQuestion(question.id, 'textTe', e.target.value)}
                                 placeholder="తెలుగులో ప్రశ్నను నమోదు చేయండి"
                                 rows={2}
                                 disabled={loading}
+                                required
                               />
                             </div>
                           </div>
@@ -591,6 +654,53 @@ export default function EditQuizPage() {
           </Button>
         </div>
       </form>
+
+      {/* Validation Modal */}
+      {showValidationModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-card rounded-lg border max-w-md w-full"
+          >
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                  <CardTitle>Validation Errors</CardTitle>
+                </div>
+                <CardDescription>
+                  Please fill all English and Telugu fields (question and options) before updating
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {validationErrors.map((err, index) => (
+                    <div
+                      key={index}
+                      className="p-3 bg-destructive/10 border border-destructive/20 rounded-md cursor-pointer hover:bg-destructive/20 transition-colors"
+                      onClick={() => navigateToQuestion(err.questionId)}
+                    >
+                      <div className="font-medium text-sm text-destructive">
+                        Question {err.questionIndex + 1}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {err.message}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Button onClick={() => setShowValidationModal(false)}>
+                    Close
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
