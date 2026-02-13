@@ -22,7 +22,7 @@ import dayFlashCardDeckRoutes from './routes/dayFlashCardDeckRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // CORS: allow FRONTEND_URL (comma-separated) and always allow localhost for local dev
 const frontendOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';

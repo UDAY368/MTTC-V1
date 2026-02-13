@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import ramuMasterImage from '@/assets/Ramu_Master_New.png';
+import instructorImage from '@/assets/Ramu_Archana.jpeg';
 
 interface InstructorSectionProps {
   instructorName?: string;
@@ -60,6 +60,7 @@ function highlightPhrases(text: string): React.ReactNode {
  */
 export function InstructorSection({ instructorName, aboutInstructor, compact }: InstructorSectionProps) {
   const name = instructorName || 'Instructor';
+  const displayName = name === 'Ramu Master' ? 'Ramu Master & Archana Madam' : name;
   const about =
     aboutInstructor ||
     'Our lead instructor guides this program with depth and presence, supporting your journey into meditation and teaching.';
@@ -88,7 +89,7 @@ export function InstructorSection({ instructorName, aboutInstructor, compact }: 
                 : 'mb-6 text-lg font-semibold tracking-tight text-foreground sm:text-xl md:text-2xl text-center'
             }
           >
-            About Instructor
+            About Instructors
           </h2>
           {/* Circular photo — padding on top, image shifted down in frame */}
           <div className={`relative mb-4 pt-4 sm:pt-5 md:pt-6 ${compact ? '' : 'mb-6'}`}>
@@ -100,24 +101,24 @@ export function InstructorSection({ instructorName, aboutInstructor, compact }: 
             <div
               className={
                 compact
-                  ? 'relative overflow-hidden rounded-full border border-white/10 bg-card/80 shadow-2xl shadow-black/25 ring-2 ring-primary/20 ring-offset-2 ring-offset-card h-32 w-32 sm:h-36 sm:w-36 md:h-40 md:w-40'
+                  ? 'relative overflow-hidden rounded-full border border-white/10 bg-card/80 shadow-2xl shadow-black/25 ring-2 ring-primary/20 ring-offset-2 ring-offset-card h-36 w-36 sm:h-40 sm:w-40 md:h-44 md:w-44'
                   : 'relative overflow-hidden rounded-full border border-white/10 bg-card/80 shadow-2xl shadow-black/25 ring-2 ring-primary/20 ring-offset-2 ring-offset-card h-36 w-36 sm:h-40 sm:w-40 md:h-44 md:w-44'
               }
             >
               <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/5 pointer-events-none" aria-hidden />
               <Image
-                src={ramuMasterImage}
-                alt={name}
+                src={instructorImage}
+                alt={displayName}
                 className="h-full w-full object-cover"
                 style={{ objectPosition: 'center 22%', transform: 'scale(1.4)' }}
-                width={compact ? 160 : 176}
-                height={compact ? 160 : 176}
+                width={compact ? 176 : 176}
+                height={compact ? 176 : 176}
                 unoptimized
               />
             </div>
           </div>
           <h3 className={`${compact ? 'mb-2 text-sm font-semibold text-foreground sm:text-base md:text-lg' : 'mb-3 text-base font-semibold text-foreground sm:text-lg md:text-xl'} text-center`}>
-            {name}
+            {displayName}
           </h3>
           <p
             className={
