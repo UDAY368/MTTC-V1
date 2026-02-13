@@ -487,6 +487,7 @@ export default function EditQuizPage() {
                     {/* Question Content - Collapsible */}
                     {!isCollapsed && (
                       <motion.div
+                        data-question-card
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
@@ -560,18 +561,52 @@ export default function EditQuizPage() {
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 min-w-0 sm:pl-2">
                                 <Input
+                                  data-option-input
                                   value={option.text}
                                   onChange={(e) => updateOption(question.id, option.id, 'text', e.target.value)}
                                   placeholder={`English: Option ${oIndex + 1}`}
                                   disabled={loading}
                                   className="h-9"
+                                  onKeyDown={(e) => {
+                                    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+                                    const card = (e.target as HTMLElement).closest('[data-question-card]');
+                                    if (!card) return;
+                                    const inputs = Array.from(card.querySelectorAll<HTMLInputElement>('[data-option-input]'));
+                                    const idx = inputs.indexOf(e.target as HTMLInputElement);
+                                    if (idx === -1) return;
+                                    e.preventDefault();
+                                    if (e.key === 'ArrowDown') {
+                                      const next = idx < inputs.length - 1 ? idx + 1 : 0;
+                                      inputs[next]?.focus();
+                                    } else {
+                                      const prev = idx > 0 ? idx - 1 : inputs.length - 1;
+                                      inputs[prev]?.focus();
+                                    }
+                                  }}
                                 />
                                 <Input
+                                  data-option-input
                                   value={option.textTe}
                                   onChange={(e) => updateOption(question.id, option.id, 'textTe', e.target.value)}
                                   placeholder={`Telugu: ఎంపిక ${oIndex + 1}`}
                                   disabled={loading}
                                   className="h-9"
+                                  onKeyDown={(e) => {
+                                    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+                                    const card = (e.target as HTMLElement).closest('[data-question-card]');
+                                    if (!card) return;
+                                    const inputs = Array.from(card.querySelectorAll<HTMLInputElement>('[data-option-input]'));
+                                    const idx = inputs.indexOf(e.target as HTMLInputElement);
+                                    if (idx === -1) return;
+                                    e.preventDefault();
+                                    if (e.key === 'ArrowDown') {
+                                      const next = idx < inputs.length - 1 ? idx + 1 : 0;
+                                      inputs[next]?.focus();
+                                    } else {
+                                      const prev = idx > 0 ? idx - 1 : inputs.length - 1;
+                                      inputs[prev]?.focus();
+                                    }
+                                  }}
                                 />
                               </div>
                               {question.options.length > 2 && (
