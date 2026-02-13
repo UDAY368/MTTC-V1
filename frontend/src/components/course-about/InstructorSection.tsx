@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import instructorImage from '@/assets/Ramu_Archana.jpeg';
+import instructorImage from '@/assets/Ramu_Archana_2.jpeg';
 
 interface InstructorSectionProps {
   instructorName?: string;
@@ -101,8 +101,8 @@ export function InstructorSection({ instructorName, aboutInstructor, compact }: 
             <div
               className={
                 compact
-                  ? 'relative overflow-hidden rounded-full border border-white/10 bg-card/80 shadow-2xl shadow-black/25 ring-2 ring-primary/20 ring-offset-2 ring-offset-card h-36 w-36 sm:h-40 sm:w-40 md:h-44 md:w-44'
-                  : 'relative overflow-hidden rounded-full border border-white/10 bg-card/80 shadow-2xl shadow-black/25 ring-2 ring-primary/20 ring-offset-2 ring-offset-card h-36 w-36 sm:h-40 sm:w-40 md:h-44 md:w-44'
+                  ? 'relative overflow-hidden rounded-full border border-white/10 bg-card/80 shadow-2xl shadow-black/25 ring-2 ring-primary/20 ring-offset-2 ring-offset-card h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36'
+                  : 'relative overflow-hidden rounded-full border border-white/10 bg-card/80 shadow-2xl shadow-black/25 ring-2 ring-primary/20 ring-offset-2 ring-offset-card h-32 w-32 sm:h-36 sm:w-36 md:h-40 md:w-40'
               }
             >
               <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/5 pointer-events-none" aria-hidden />
@@ -110,9 +110,9 @@ export function InstructorSection({ instructorName, aboutInstructor, compact }: 
                 src={instructorImage}
                 alt={displayName}
                 className="h-full w-full object-cover"
-                style={{ objectPosition: 'center 22%', transform: 'scale(1.4)' }}
-                width={compact ? 176 : 176}
-                height={compact ? 176 : 176}
+                style={{ objectPosition: 'center center' }}
+                width={compact ? 144 : 160}
+                height={compact ? 144 : 160}
                 unoptimized
               />
             </div>
