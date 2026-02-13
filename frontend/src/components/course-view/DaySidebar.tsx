@@ -164,7 +164,11 @@ export function DaySidebar({
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2" aria-label="Course days">
+      <nav
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2"
+        style={{ scrollbarGutter: 'stable' }}
+        aria-label="Course days"
+      >
         <ul className={collapsed ? 'flex flex-col items-center gap-1 px-1.5 py-1 pt-3' : 'space-y-0.5 px-2'}>
           {days.map((day, index) => {
             const isActive = selectedDayId === day.id;

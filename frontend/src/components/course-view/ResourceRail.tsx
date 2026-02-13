@@ -235,7 +235,11 @@ export function ResourceRail({
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2" aria-label="Resource list">
+      <nav
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2"
+        style={{ scrollbarGutter: 'stable' }}
+        aria-label="Resource list"
+      >
         {items.length === 0 ? (
           <p className="px-2.5 py-3 text-[10px] text-muted-foreground sm:px-3 sm:py-4 sm:text-xs md:text-sm">
             No resources for this day.

@@ -81,18 +81,23 @@ export function CourseViewLayout({ courseId, courseName, days, initialDayId, ini
     setSelectedItem(item);
   };
 
+  const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
+  const railWidth = railCollapsed ? RAIL_WIDTH_COLLAPSED : RAIL_WIDTH_EXPANDED;
+  const sidebarTransition = { duration: 0.28, ease: [0.25, 0.1, 0.25, 1] as const };
+
   return (
     <div className="relative flex min-h-[calc(100vh-4rem)] overflow-x-hidden">
-      {/* Left sidebar: desktop (lg) only — hidden on mobile; day strip is above content on mobile */}
+      {/* Left sidebar: fixed on lg so it stays visible on page scroll; desktop only */}
       <motion.aside
         initial={false}
         animate={{
-          width: sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
+          width: sidebarWidth,
         }}
-        transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
-        className={`absolute left-0 top-0 z-30 hidden h-full shrink-0 overflow-hidden lg:relative lg:z-auto lg:block lg:bg-card/95 ${
+        transition={sidebarTransition}
+        className={`fixed left-0 z-30 hidden h-[calc(100vh-4rem)] shrink-0 overflow-hidden lg:block lg:bg-card/95 ${
           sidebarCollapsed ? 'bg-transparent shadow-none sm:bg-card sm:shadow-sm' : 'bg-card shadow-sm'
         }`}
+        style={{ top: '4rem' }}
       >
         <DaySidebar
           days={daysWithItems}
@@ -102,6 +107,15 @@ export function CourseViewLayout({ courseId, courseName, days, initialDayId, ini
           onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
         />
       </motion.aside>
+
+      {/* Spacer so main content is not under the fixed sidebar on lg */}
+      <motion.div
+        initial={false}
+        animate={{ width: sidebarWidth }}
+        transition={sidebarTransition}
+        className="hidden shrink-0 lg:block"
+        aria-hidden
+      />
 
       <main className="flex min-w-0 flex-1 flex-col px-4 py-3 sm:px-5 sm:py-3 md:px-6 md:py-3">
         {/* Mobile only: day strip above content (numbers + tooltip, collapsible down arrow) */}
@@ -129,16 +143,24 @@ export function CourseViewLayout({ courseId, courseName, days, initialDayId, ini
         </div>
       </main>
 
-      {/* Right rail: desktop (lg) only — hidden on mobile; resource strip is below day strip on mobile */}
+      {/* Spacer so main content is not under the fixed rail on lg */}
+      <motion.div
+        initial={false}
+        animate={{ width: railWidth }}
+        transition={sidebarTransition}
+        className="hidden shrink-0 lg:block"
+        aria-hidden
+      />
+
+      {/* Right rail: fixed on lg so it stays visible on page scroll; desktop only */}
       <motion.aside
         initial={false}
-        animate={{
-          width: railCollapsed ? RAIL_WIDTH_COLLAPSED : RAIL_WIDTH_EXPANDED,
-        }}
-        transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
-        className={`absolute right-0 top-0 z-30 hidden h-full shrink-0 overflow-hidden lg:relative lg:z-auto lg:block lg:bg-card/95 ${
+        animate={{ width: railWidth }}
+        transition={sidebarTransition}
+        className={`fixed right-0 z-30 hidden h-[calc(100vh-4rem)] shrink-0 overflow-hidden lg:block lg:bg-card/95 ${
           railCollapsed ? 'bg-transparent shadow-none sm:bg-card sm:shadow-sm' : 'bg-card shadow-sm'
         }`}
+        style={{ top: '4rem' }}
       >
         <ResourceRail
           items={currentItems}
